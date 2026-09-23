@@ -1,0 +1,95 @@
+/* ===== Relation layer, bản dọn gọn: chip trung tính, số liên kết nhỏ, drawer một danh sách mỗi lúc. Load sau cùng. ===== */
+
+/* Chip: một kiểu, không màu theo loại; mã KR/KS đậm, nhãn loại mờ cho các loại khác */
+.chips{gap:6px;margin-top:10px}
+.chip{border:1px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-secondary);font-size:12px;padding:3px 8px;border-radius:6px;gap:5px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip b{font-weight:650;color:var(--text-primary)}
+.chip-type{font-size:11px;color:var(--text-tertiary)}
+.chip.link{cursor:pointer;font:inherit;font-size:12px}
+.chip.link:hover{border-color:var(--text-tertiary);color:var(--text-primary);background:var(--bg-secondary)}
+.chip.more{cursor:pointer;background:var(--bg-tertiary);border-color:transparent;color:var(--text-secondary);font-weight:600}
+.entity-type{display:none}
+
+/* Dòng OKR: cột liên kết nhỏ trước progress, chỉ hiện khi có dữ liệu */
+.okr-row{grid-template-columns:44px minmax(0,1fr) 74px 220px}
+.okr-links{display:flex;gap:10px;justify-content:flex-end;color:var(--text-tertiary);font-size:12px;min-height:18px}
+.okr-links span{display:inline-flex;align-items:center;gap:3px}
+.okr-links svg{width:14px;height:14px}
+.okr-row.clickable:hover .okr-links{color:var(--text-secondary)}
+.okr-count{display:none}
+
+/* Drawer Liên quan */
+.segmented{display:inline-flex;background:var(--bg-tertiary);border-radius:8px;padding:3px;margin:6px 0 14px}
+.segmented button{border:0;background:none;border-radius:6px;padding:7px 14px;font-size:13px;color:var(--text-secondary);display:inline-flex;align-items:center;gap:6px}
+.segmented button span{font-size:12px;color:var(--text-tertiary)}
+.segmented button.active{background:var(--bg-primary);color:var(--text-primary);font-weight:600;box-shadow:0 1px 2px #0001}
+.related-list{display:flex;flex-direction:column;gap:0;margin:0}
+.related-row{grid-template-columns:20px minmax(0,1fr) auto;border:0;border-bottom:1px solid var(--border-primary);border-radius:0;background:none;padding:12px 4px}
+.related-row:hover{background:var(--bg-secondary);border-color:var(--border-primary)}
+.related-row>svg{width:18px;height:18px;color:var(--text-tertiary)}
+.related-row strong{font-weight:550}
+.related-row small{margin-top:2px}
+.related-list>.hint{padding:14px 4px}
+
+/* Tổng hợp báo cáo dạng danh sách */
+.report-hub .list-toolbar{border-bottom:1px solid var(--border-primary)}
+.report-hub .hub-filters{padding:12px 24px;gap:14px;align-items:center}
+.report-hub .hub-relation{margin:0}
+.report-hub .hub-filters .text-button{margin:0}
+.report-hub .report-row:first-of-type{border-top:0}
+.button.active-filter{border-color:var(--text-primary);color:var(--text-primary)}
+.record-meta .avatar.tiny{width:20px;height:20px;border:0;font-size:10px}
+
+/* --- Bộ lọc gọn: 2 dropdown --- */
+.hub-selects{display:flex;gap:10px}
+.hub-selects select{font-size:14px;padding:8px 32px 8px 12px;border-radius:7px;background:var(--bg-secondary);border-color:var(--border-secondary);max-width:240px}
+.count-pill{background:var(--purple-soft);color:var(--purple);border-radius:999px;padding:1px 7px;font-size:11px;margin-left:4px}
+/* --- Panel Gợi ý từ dự án --- */
+.suggest-panel section{margin-top:20px}
+.suggest-panel h4{display:flex;align-items:baseline;gap:8px;font-size:14px;margin-bottom:6px}
+.suggest-panel h4 small{color:var(--text-tertiary);font-weight:400;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.suggest-item{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-primary);font-size:14px;line-height:1.5}
+.suggest-item>span:first-child{flex:1;min-width:0}
+.suggest-item>span:first-child small{display:block;margin-top:3px;font-size:12px}
+.suggest-item .text-button{color:var(--text-tertiary);font-size:12px}
+.suggest-item .text-button:hover{color:var(--blue)}
+.suggest-item .button.quiet{min-height:30px;padding:4px 8px;font-size:13px;white-space:nowrap}
+.suggest-item .badge svg{width:12px;height:12px}
+.empty-cta{display:inline-flex;align-items:center;gap:8px;border:1px dashed var(--border-secondary);background:var(--bg-secondary);border-radius:9px;padding:12px 16px;font-size:14px;color:var(--text-secondary);cursor:pointer;text-align:left}
+.empty-cta:hover{border-color:var(--purple);color:var(--purple)}
+
+/* --- Bộ lọc sau nút Lọc --- */
+.hub-selects{align-items:flex-end;flex-wrap:wrap}
+.hub-selects label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text-tertiary);font-weight:600}
+.hub-selects select{min-width:150px}
+.hub-selects .text-button{align-self:center;font-size:13px;margin-left:4px}
+.count-pill.neutral{background:var(--bg-tertiary);color:var(--text-secondary)}
+/* --- Template báo cáo tuần: 3 mục --- */
+.block.section{padding:10px 0 14px}
+.block.section h3{display:flex;align-items:center;gap:8px}
+.block.section .block-text{min-height:0}
+.suggest-item .target{display:inline-block;font-size:11px;color:var(--text-tertiary);margin-top:3px}
+
+/* --- Drawer Lịch sử mục tiêu --- */
+.goal-progress{display:flex;flex-direction:column;gap:6px;margin:4px 0 14px}
+.goal-progress .progress-track{height:8px}
+.goal-filter{margin-bottom:6px}
+.goal-filter button span{color:var(--text-tertiary);font-weight:400;margin-left:2px}
+.goal-timeline{list-style:none;margin:0;padding:0}
+.goal-timeline li{display:grid;grid-template-columns:44px 28px minmax(0,1fr);gap:10px;align-items:start;position:relative}
+.goal-timeline li+li{margin-top:2px}
+.gt-date{font-size:12px;color:var(--text-tertiary);padding-top:12px;text-align:right}
+.gt-dot{position:relative;display:flex;justify-content:center;padding-top:9px;height:100%}
+.gt-dot:before{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--border-secondary)}
+.gt-dot svg{position:relative;width:22px;height:22px;padding:4px;border-radius:50%;background:var(--bg-primary);border:1px solid var(--border-secondary);color:var(--text-tertiary)}
+.goal-timeline li.checkin .gt-dot svg{background:var(--accent);border-color:var(--accent);color:#fff}
+.goal-timeline li.contribution .gt-dot svg{color:var(--green);border-color:var(--green-soft);background:var(--green-soft)}
+.goal-timeline li:first-child .gt-dot:before{top:12px}
+.goal-timeline li:last-child .gt-dot:before{bottom:calc(100% - 12px)}
+.gt-body{display:flex;flex-direction:column;gap:3px;text-align:left;border:0;background:none;padding:8px 10px 12px;border-radius:8px;color:var(--text-primary);width:100%}
+.gt-body:hover{background:var(--bg-secondary)}
+.gt-title{font-size:14px;font-weight:550;display:flex;align-items:center;gap:8px;flex-wrap:wrap;line-height:1.45}
+.gt-via{font-size:11px;color:var(--text-tertiary);font-weight:400}
+.gt-note{font-size:13px;color:var(--text-secondary)}
+.gt-body>small{font-size:12px;color:var(--text-tertiary)}
+.goal-timeline li.checkin .gt-title{color:var(--text-primary)}

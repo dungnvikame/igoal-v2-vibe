@@ -1,0 +1,13 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {StoreProvider} from './store';
+import App from './App';
+import './styles/tokens.css';
+import './styles/theme.css';
+import './styles/igoal-align.css';
+import './styles/igoal-pages.css';
+import './styles/type-scale.css';
+import './styles/relation-clean.css';
+import './styles/ux-clean.css';
+import './styles/polish.css';
+createRoot(document.getElementById('root')!).render(<StoreProvider><App/></StoreProvider>);

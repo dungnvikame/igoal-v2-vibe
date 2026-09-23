@@ -1,0 +1,140 @@
+/*
+ * Lớp cuối cùng (load sau mọi file khác): a11y, trạng thái tương tác, chuyển động và vài sửa lỗi layout.
+ * Không đổi bố cục / màu thương hiệu iGoal, chỉ vá chỗ các lớp override trước đè sai.
+ */
+:root{--ease-out:cubic-bezier(.2,.7,.3,1);--dur-fast:120ms;--dur:180ms;--dur-slow:220ms;
+ /* Màu chữ đạt 4.5:1 trên nền soft tương ứng (token gốc dùng cho icon / thanh tiến độ). */
+ --green-text:#027a2e;--amber-text:#8f5f00;--blue-text:#0b6fc7}
+
+/* ---------- Focus: mọi phần tử bấm được đều có vòng focus khi dùng bàn phím ---------- */
+[role=button]:focus-visible,[role=option]:focus-visible,[tabindex="0"]:focus-visible,.link:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.report-row:focus-visible,.tl-row:focus-visible,.okr-row:focus-visible,.sp-line:focus-visible,.sp-source:focus-visible,.rp-row:focus-visible,.report-type:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+label.button:focus-within,.select-pill:focus-within{outline:2px solid var(--blue);outline-offset:2px}
+/* Ô tìm kiếm có icon: vòng focus nằm ở khung ngoài, không phải input bên trong. */
+.search-input input:focus-visible,.global-search input:focus-visible,.sp-search input:focus-visible,.rp-search input:focus-visible{outline:none}
+.search-input:focus-within,.global-search:focus-within,.sp-search:focus-within,.rp-search:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+
+/* ---------- Chuyển động trạng thái (hover / press) ---------- */
+.button,.nav-item,.report-row,.tl-row,.okr-row,.sp-line,.sp-source,.rp-row,.rp-chip,.rp-add,.project-card,.stat-filter button,.segmented button,.inner-tabs button,.project-tabs button,.editor-rail button,.person-chip,.report-type,.icon-button,.text-button,.crumb-link,.tr-add,.sp-back,.sp-open,.icon-x{transition:background-color var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out),color var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out),transform var(--dur-fast) var(--ease-out)}
+.button:active:not(:disabled),.report-type:active,.stat-filter button:active,.person-chip:active,.rp-add:active{transform:scale(.97)}
+.project-card:active{transform:scale(.995)}
+.project-card:hover{border-color:var(--text-tertiary)}
+
+/* Modal / drawer / toast / panel phải: vào có hướng, không bật tức thì. */
+@keyframes pl-fade{from{opacity:0}}
+@keyframes pl-pop{from{opacity:0;transform:translateY(8px) scale(.98)}}
+@keyframes pl-slide-right{from{opacity:.4;transform:translateX(32px)}}
+@keyframes pl-rise{from{opacity:0;transform:translate(-50%,10px)}}
+.overlay{animation:pl-fade var(--dur) var(--ease-out)}
+.dialog{animation:pl-pop var(--dur-slow) var(--ease-out)}
+.dialog.drawer{animation:pl-slide-right var(--dur-slow) var(--ease-out)}
+.editor-aside,.page-panel,.cl-panel{animation:pl-fade var(--dur) var(--ease-out)}
+.toast{animation:pl-rise var(--dur-slow) var(--ease-out)}
+.search-results,.rp-pop,.ev-pop{animation:pl-pop var(--dur) var(--ease-out)}
+
+@media (prefers-reduced-motion:reduce){
+ *,*::before,*::after{animation-duration:1ms!important;animation-iteration-count:1!important;transition-duration:1ms!important;scroll-behavior:auto!important}
+}
+
+/* ---------- Màu chữ trạng thái đủ tương phản (badge 12px) ---------- */
+.badge.success{color:var(--green-text)}
+.badge.warning{color:var(--amber-text)}
+.badge.info{color:var(--blue-text)}
+
+/* ---------- Sửa lỗi layout ---------- */
+/* Tiêu đề editor: rule input:not(...) (0,2,1) đè .title-input về 14px — trả lại cỡ tiêu đề trang. */
+.editor-doc input.title-input{font-size:26px;padding:6px 0}
+/* .content có margin auto trong grid bị co theo nội dung → tab Contribution Log co vào giữa và nhảy khi mở panel. */
+.content{width:100%}
+/* Giữ chỗ thanh cuộn để chuyển giữa trang dài / ngắn không làm layout lệch ngang. */
+html{scrollbar-gutter:stable}
+/* Chip liên kết trong panel hẹp: co lại + cắt chữ thay vì tràn ngang. */
+.meta-row>div{min-width:0}
+.rp-chips{min-width:0;max-width:100%}
+.rp-chip{max-width:min(280px,100%);min-width:0}
+.editor-aside,.page-panel{overflow-x:hidden}
+
+/* Nút gỡ chip nhỏ (21px): nới vùng bấm mà không đổi hình. */
+.rp-chip>button{position:relative}
+.rp-chip>button::after{content:"";position:absolute;inset:-6px}
+
+/* Lỗi theo từng ô trong form */
+.field.invalid textarea,.field.invalid input{border-color:var(--red)!important}
+.field-error{color:var(--red);font-size:13px;margin:4px 0 0}
+
+/* ---------- Màn hẹp (≤1000px): panel phải thành lớp phủ thay vì bị ẩn mất ---------- */
+@media(max-width:1000px){
+ .editor-frame.with-aside .editor-aside{display:block;position:fixed;top:56px;right:44px;bottom:0;width:min(380px,calc(100vw - 60px));height:auto;z-index:60;box-shadow:-12px 0 32px #0000001f}
+ .page-body.with-panel{grid-template-columns:minmax(0,1fr)}
+ .page-body.with-panel .page-panel{position:fixed;top:48px;right:0;bottom:0;width:min(400px,100vw);height:auto;z-index:60;box-shadow:-12px 0 32px #0000001f}
+}
+
+/* ======================= Cải tiến nhìn thấy được (23/09) ======================= */
+
+/* Màu theo loại báo cáo: danh sách dùng cùng màu với modal "Tạo báo cáo mới" (tuần xanh · tức thời vàng · họp tím · check-in xanh lá). */
+.record-icon.weekly,.type-icon.weekly{background:var(--blue-soft);color:var(--blue);border-color:transparent}
+.record-icon.instant,.type-icon.instant{background:var(--amber-soft);color:var(--amber);border-color:transparent}
+.record-icon.meeting,.type-icon.meeting{background:var(--purple-soft);color:var(--purple);border-color:transparent}
+.record-icon.checkin,.type-icon.checkin{background:var(--green-soft);color:var(--green);border-color:transparent}
+.type-icon.contribution{background:var(--accent-soft);color:var(--accent)}
+.type-icon.small{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;flex-shrink:0}
+.type-icon.project{background:var(--bg-tertiary);color:var(--text-secondary)}
+
+/* Tổng hợp báo cáo: nhóm theo tuần */
+.rh-group-head{display:flex;align-items:center;gap:8px;padding:14px 22px 6px;font-size:12px;font-weight:650;letter-spacing:.4px;text-transform:uppercase;color:var(--text-tertiary)}
+.rh-group-head small{font-size:11px;font-weight:600;letter-spacing:0;background:var(--bg-tertiary);color:var(--text-secondary);border-radius:999px;padding:1px 8px}
+.rh-group+.rh-group{border-top:1px solid var(--border-primary)}
+/* Hover dòng: hiện hành động sẽ xảy ra (Xem / Tiếp tục soạn) */
+.row-go{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:550;color:var(--text-secondary);white-space:nowrap;flex-shrink:0;opacity:0;transform:translateX(-4px);transition:opacity var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
+.row-go svg{width:15px;height:15px}
+.report-row.slim:hover .row-go,.report-row.slim:focus-visible .row-go{opacity:1;transform:none}
+.report-row.slim.is-draft .row-go{color:var(--accent)}
+@media(hover:none){.row-go{opacity:1;transform:none}}
+
+/* Editor: ô nhập tự giãn, trạng thái lưu, bóng bar khi cuộn, dấu ✓ mục đã viết */
+.block-text{resize:none;overflow:hidden}
+.editor-bar{transition:box-shadow var(--dur) var(--ease-out)}
+.editor-bar.scrolled{box-shadow:0 1px 0 var(--border-secondary),0 8px 18px -12px #00000033}
+.save-state{display:inline-flex;align-items:center;gap:6px;font-size:13px;margin-right:6px;white-space:nowrap}
+.save-state.dirty{color:var(--amber-text)}
+.save-state.saved{color:var(--green-text)}
+.save-state svg{width:15px;height:15px}
+.save-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber)}
+.ws>h3{display:flex;align-items:center;gap:8px}
+.ws-done{width:16px;height:16px;color:var(--green);animation:pl-pop var(--dur) var(--ease-out)}
+
+/* Tìm kiếm toàn cục: nhóm, icon, meta, phần khớp được tô */
+.search-results{width:440px;top:40px;padding:6px}
+.gs-group{font-size:11px;font-weight:650;letter-spacing:.5px;text-transform:uppercase;color:var(--text-tertiary);padding:10px 10px 4px}
+.search-results .gs-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;font-size:14px;color:var(--text-primary)}
+.search-results .gs-row.active{background:var(--bg-tertiary)}
+.gs-text{display:flex;flex-direction:column;min-width:0}
+.gs-text strong{font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gs-text small{font-size:12px;color:var(--text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gs-text mark{background:var(--accent-soft);color:inherit;border-radius:3px;padding:0 1px}
+.gs-empty{padding:14px 10px;margin:0;font-size:13px;color:var(--text-tertiary)}
+.gs-foot{display:flex;gap:16px;border-top:1px solid var(--border-primary);margin-top:6px;padding:8px 10px 4px;font-size:12px;color:var(--text-tertiary)}
+.gs-foot kbd{font:inherit;font-size:11px;background:var(--bg-tertiary);border-radius:4px;padding:1px 5px;margin-right:3px}
+
+/* Toast: icon xanh trên nền tối, nút đóng */
+.toast{padding:12px 12px 12px 18px}
+.toast>svg{color:#6fdc95;flex-shrink:0}
+.toast-x{border:0;background:none;color:inherit;opacity:.7;display:grid;place-items:center;padding:4px;border-radius:6px;margin-left:8px}
+.toast-x:hover{opacity:1;background:#ffffff1f}
+
+/* Card dự án: nổi nhẹ khi hover, chấm xanh = có báo cáo trong 7 ngày */
+.project-card:hover{box-shadow:0 10px 24px -14px #00000040;transform:translateY(-1px)}
+.project-card:active{transform:translateY(0) scale(.995)}
+.pc-activity .fresh-dot{display:inline-block;vertical-align:1px}
+.fresh-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--border-secondary);margin-right:8px;flex-shrink:0}
+.fresh-dot.on{background:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+
+/* Ô số liệu Contribution: chấm màu trạng thái */
+.stat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--text-primary)}
+.stat-dot.pending{background:var(--amber)}
+.stat-dot.more{background:var(--red)}
+.stat-dot.ok{background:var(--green)}
+.stat-dot.draft{background:var(--bg-primary);box-shadow:inset 0 0 0 1.5px var(--text-tertiary)}
+.stat-filter button.active{background:var(--bg-secondary)}
+/* Ô tìm kiếm có khung: input trong suốt, không thành hộp trắng lồng trong khung xám. */
+.search-input input{background:transparent!important}

@@ -1,0 +1,29 @@
+# Kiểm tra mỗi lần push / mở PR: typecheck + build. Deploy do Vercel Git integration lo
+# (push main → production, branch / PR khác → link preview riêng).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: prototype-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: prototype-app/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build

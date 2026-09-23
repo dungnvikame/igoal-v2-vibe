@@ -1,0 +1,96 @@
+/* ===== Cỡ chữ: nâng toàn bộ lên gần iGoal thật (body 14–15, phụ 13, nhãn 12). Load sau cùng. ===== */
+body{font-size:15px}
+h1{font-size:28px}
+h2{font-size:20px}
+h3{font-size:16px}
+h4{font-size:15px}
+.button{font-size:14px;min-height:38px;padding:9px 14px}
+.button svg{width:18px;height:18px}
+.hint{font-size:13px}
+.badge{font-size:12px;padding:4px 9px}
+.chip{font-size:12px;padding:5px 9px}
+.entity-type{font-size:10px}
+.nav-item{font-size:14px;padding:10px 12px}
+.nav-item.sub{font-size:14px}
+.nav-label{font-size:11px}
+.demo-label{font-size:10px}
+.breadcrumb{font-size:15px}
+.period,.global-search input{font-size:14px}
+.project-tabs button{font-size:15px}
+.inner-tabs button{font-size:14px}
+.filter-row button{font-size:13px;padding:8px 12px}
+.page-head p{font-size:14px}
+.eyebrow{font-size:11px}
+.project-overview span:not(.avatar){font-size:10px}
+.project-overview strong{font-size:14px}
+.record-title{font-size:15px}
+.record-content>p{font-size:14px}
+.record-meta{font-size:12px}
+.report-metadata{font-size:12px}
+.reading-section p,.reading .reading-section p{font-size:15px}
+.reading-section h3{font-size:16px}
+.side-panel p,.side-note,.ai-box p,.aside-card p,.notice{font-size:14px}
+.ai-box strong{font-size:15px}
+.source-card,.source-card strong{font-size:14px}
+.source-card small{font-size:12px}
+.source-links button{font-size:12px;padding:5px 8px}
+.field{font-size:14px}
+input:not([type=checkbox]):not([type=file]),textarea,select{font-size:14px;padding:10px 12px}
+.carry-row{font-size:14px}
+.carry-row select{font-size:13px}
+.carry-num{font-size:12px}
+.check-line{font-size:14px}
+.stat-strip span{font-size:13px}
+.stat-strip strong{font-size:28px}
+.steps>div{font-size:13px}
+.transcript-segment>div,.transcript-segment p{font-size:14px}
+.timestamp{font-size:11px}
+.editor-section select{font-size:13px}
+.suggested-tags>div{font-size:13px}
+.picker-row{font-size:14px}
+.evidence-row{font-size:14px}
+.event-date{font-size:12px}
+.event-card p{font-size:14px}
+.timeline-toolbar p{font-size:14px}
+.report-type strong{font-size:15px}
+.report-type small{font-size:13px}
+.group-note{font-size:14px}
+.dialog>header h2{font-size:18px}
+.dialog>header p{font-size:14px}
+.toast{font-size:14px}
+table{font-size:14px}
+th{font-size:12px}
+/* Editor full-page */
+.title-input,.doc-title{font-size:26px}
+.meta-row{font-size:14px}
+.user-chip{font-size:14px}
+.select-pill,.select-pill select{font-size:13px}
+.block h3{font-size:16px}
+.block-text{font-size:15px;line-height:1.8}
+.block-empty{font-size:14px}
+.editor-bar>.button.quiet{font-size:14px}
+.old-reports-head h3{font-size:17px}
+.pager{font-size:13px}
+.old-report-owner strong{font-size:15px}
+.old-report-owner small{font-size:13px}
+.old-report-card h4{font-size:15px}
+.old-report-card section strong,.old-report-card section p{font-size:14px}
+.ks-objective,.ks-toggle,.ks-label{font-size:14px}
+.ks-remove{font-size:13px}
+.slider-row span{font-size:14px}
+.dropzone strong{font-size:14px}
+.dropzone small{font-size:12px}
+.bar-col{font-size:12px}
+.bar-col strong{font-size:13px}
+/* Panel Tổng hợp bằng AI trong báo cáo tuần */
+.ai-panel{border:1px solid var(--purple-soft);background:var(--purple-soft);border-radius:12px;padding:18px 20px}
+.ai-panel .section-heading h3{display:flex;align-items:center;gap:8px;color:var(--purple)}
+.ai-panel>p{font-size:14px;color:var(--text-secondary);margin:8px 0 6px}
+.ai-panel h4{margin:16px 0 6px;font-size:14px}
+.ai-panel .chips{margin-top:6px}
+.ai-panel .chip{cursor:pointer;background:var(--bg-primary)}
+.ai-panel .carry-list{padding:0;background:var(--bg-primary);border-radius:8px;padding:0 14px}
+.ai-panel .carry-row{padding:12px 0}
+.ai-panel .carry-row:first-child{border-top:0}
+.ai-panel>.hint{margin-top:8px}
+.row.end{justify-content:flex-end;margin-top:16px}

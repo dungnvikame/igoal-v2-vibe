@@ -1,0 +1,93 @@
+/* ===== Trang danh sách Dự án · card OKR/EKS · My EKS · Tổng hợp báo cáo (bám iGoal thật, screenshots 22/09) ===== */
+
+/* --- Trang danh sách Dự án --- */
+.project-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.project-toolbar .search-input.compact{width:260px;background:var(--bg-tertiary);border-color:transparent}
+.project-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:18px}
+.project-card{text-align:left;padding:22px 24px;cursor:pointer;display:flex;flex-direction:column;gap:10px;min-height:200px}
+.project-card:hover{border-color:var(--text-tertiary)}
+.project-card h3{font-size:18px}
+.project-card .chips{margin-top:0}
+.tag{border:1px solid var(--border-secondary);background:var(--bg-secondary);border-radius:999px;padding:4px 11px;font-size:13px;font-weight:600}
+.project-objective{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:12px;font-size:14px}
+.project-objective span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.project-objective strong{color:var(--accent)}
+.project-empty{margin:auto;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text-secondary);font-size:14px;padding:10px 0}
+.empty-orb{width:56px;height:56px;border-radius:50%;background:var(--green-soft);display:grid;place-items:center;font-size:26px}
+.crumb-link{border:0;background:none;padding:0;color:var(--text-tertiary);font:inherit;cursor:pointer}
+.crumb-link:hover{color:var(--text-primary)}
+
+/* --- Card OKR / EKS với tiến độ --- */
+.stack.wide-gap{gap:22px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border-secondary);gap:16px}
+.card-head h3{font-size:16px}
+.okr-row{display:grid;grid-template-columns:44px minmax(0,1fr) 220px;align-items:center;gap:14px;padding:16px 24px;border-bottom:1px solid var(--border-primary)}
+.okr-row.objective{background:var(--bg-secondary);font-weight:600}
+.okr-row.child{padding-left:34px}
+.okr-code{font-size:13px;font-weight:700;color:var(--accent)}
+.okr-code.circle{width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:12px}
+.okr-text{font-size:15px;line-height:1.5}
+.progress{display:flex;align-items:center;gap:12px}
+.progress-track{flex:1;height:10px;border-radius:999px;background:var(--bg-tertiary);overflow:hidden}
+.progress-track span{display:block;height:100%;background:#f2b705;border-radius:999px}
+.progress strong{min-width:42px;text-align:right;font-size:14px}
+.okr-more{width:100%;border:0;background:none;padding:16px;font-weight:600;color:var(--text-primary)}
+.okr-more:hover{background:var(--bg-secondary)}
+.cadence-line{margin:-6px 0 0 4px}
+
+/* --- Layout My EKS: card EKS + hồ sơ --- */
+.eks-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:22px;align-items:start;margin-bottom:22px}
+.profile-card{padding:24px;display:flex;flex-direction:column;gap:4px;color:var(--text-secondary);font-size:15px}
+.profile-card strong{color:var(--text-primary);font-size:17px;margin-top:10px}
+.avatar.large{width:64px;height:64px;font-size:22px;border:0;background:var(--bg-tertiary);color:var(--text-primary)}
+@media(max-width:1200px){.eks-layout{grid-template-columns:1fr}}
+
+/* --- Tổng hợp báo cáo: danh sách trái · xem trước phải --- */
+.report-hub .inner-tabs.compact{margin-left:18px}
+.report-hub .inner-tabs.compact button{padding:4px 0;font-size:14px}
+.hub-filters{padding:12px 24px 0;display:flex;gap:18px;flex-wrap:wrap;border-bottom:1px solid var(--border-primary)}
+.hub-body{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:420px}
+.hub-list{border-right:1px solid var(--border-secondary);padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--bg-secondary);max-height:720px;overflow:auto}
+.hub-item{display:flex;gap:10px;align-items:flex-start;text-align:left;border:1px solid transparent;background:none;border-radius:10px;padding:12px;color:var(--text-secondary)}
+.hub-item.selected{background:var(--bg-primary);border-color:var(--border-secondary)}
+.hub-item:hover:not(.selected){background:var(--bg-tertiary)}
+.hub-item strong{font-size:14px;color:var(--text-primary);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hub-item small{display:block;font-size:12px;margin-top:4px;color:var(--text-tertiary)}
+.hub-icon{width:18px;height:18px;flex-shrink:0;margin-top:2px;color:var(--accent)}
+.hub-icon.weekly{color:var(--blue)}
+.hub-icon.checkin{color:var(--green)}
+.hub-icon.instant{color:var(--amber)}
+.hub-preview{padding:22px 30px 30px;min-width:0}
+.preview-head{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border-primary);font-size:15px}
+.preview-head .avatar.tiny{width:28px;height:28px;border:0}
+.preview-head .hint{margin-left:auto}
+.preview-icons{display:flex;gap:4px}
+.preview-icons button{border:0;background:none;padding:6px;border-radius:6px;color:var(--text-secondary);display:inline-flex}
+.preview-icons button:hover:not(:disabled){background:var(--bg-tertiary)}
+.preview-icons button svg{width:18px;height:18px}
+.preview-title{font-size:18px;margin:22px 0 6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.badge.track{background:var(--accent-soft);color:var(--accent)}
+.hub-view{padding:18px 24px 24px}
+.hub-view .timeline-toolbar{padding:0 0 10px}
+.doc-title .badge{margin-left:10px;vertical-align:middle}
+@media(max-width:1000px){.hub-body{grid-template-columns:1fr}.hub-list{border-right:0;border-bottom:1px solid var(--border-secondary);max-height:220px}}
+
+/* --- Relation layer: dòng OKR bấm được, chip relation bấm được, drawer Liên quan --- */
+.okr-row.clickable{cursor:pointer}
+.okr-row.clickable:hover{background:var(--bg-tertiary)}
+.okr-row.objective.clickable:hover{background:var(--border-secondary)}
+.okr-count{display:block;font-size:12px;font-weight:400;color:var(--text-tertiary);margin-top:3px}
+.chip.link{cursor:pointer;font:inherit;font-size:12px}
+.chip.link:hover{border-color:var(--blue);color:var(--blue)}
+.hub-relation{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px}
+.hub-relation select{font-size:13px;padding:6px 10px;max-width:360px}
+.hub-filters .text-button{font-size:13px;margin-bottom:12px}
+.related-summary{margin:4px 0 8px}
+.related-list{display:flex;flex-direction:column;gap:8px;margin:10px 0 6px}
+.related-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:12px;align-items:center;text-align:left;border:1px solid var(--border-secondary);background:var(--bg-primary);border-radius:9px;padding:12px 14px;color:var(--text-primary)}
+.related-row:hover{background:var(--bg-secondary);border-color:var(--text-tertiary)}
+.related-row strong{display:block;font-size:14px;line-height:1.45}
+.related-row small{display:block;font-size:12px;color:var(--text-tertiary);margin-top:3px}
+.related-row .hub-icon{margin-top:0}
+.hub-icon.contribution{color:var(--green)}
+.dialog.drawer .dialog-body>h3{margin:22px 0 4px}
