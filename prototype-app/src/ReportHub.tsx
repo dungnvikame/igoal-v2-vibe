@@ -8,14 +8,14 @@ import {Button,Badge,Empty,Relations,ProgressBar,onActivate} from './ui';
 
 
 /** Card mục tiêu (OKR dự án hoặc EKS cá nhân): mục tiêu + KR/KS con, tiến độ, nút Cập nhật tiến độ / Tạo mới (mock, không mutation). */
-export function OkrCard({title,objectives,children,onCheckin}:{title:string;objectives:Relation[];children:(o:Relation)=>Relation[];onCheckin?:()=>void}){
+export function OkrCard({title,objectives,children,onCheckin,after}:{title:string;objectives:Relation[];children:(o:Relation)=>Relation[];onCheckin?:()=>void;/** Nội dung phụ dưới một dòng mục tiêu (vd. liên kết EKS → mục tiêu team). */after?:(e:Relation)=>React.ReactNode}){
  const [expanded,setExpanded]=useState(false);const shown=expanded?objectives:objectives.slice(0,2);
  const {data}=useStore();const openRelated=useContext(RelatedContext);const activeId=useContext(ActiveRelatedContext);
  // Mỗi dòng bấm được để mở drawer "Liên quan": báo cáo & đóng góp đã tag entity này (Relation layer).
  // Số liên kết chỉ hiện khi > 0, dạng icon + số rất nhỏ để không cạnh tranh với tên mục tiêu và tiến độ.
  const Row=({e,index,cls}:{e:Relation;index:number;cls:string})=>{const n=relatedCount(data,e.id);const has=n.reports+n.contributions>0;return <div className={'okr-row '+cls+(openRelated?' clickable':'')+(activeId===e.id?' selected':'')} role={openRelated?'button':undefined} tabIndex={openRelated?0:undefined} title={openRelated?'Xem báo cáo & đóng góp liên quan':undefined} onClick={()=>openRelated?.(e.id)} onKeyDown={openRelated?onActivate(()=>openRelated(e.id)):undefined}><span className={'okr-code '+(e.type==='Objective'||e.type==='EKS'?'circle':'')}>{entityCode(e,index)}</span><span className="okr-text">{entityText(e)}</span><span className="okr-links" aria-label={`${n.reports} báo cáo, ${n.contributions} đóng góp`}>{has&&<>{n.reports>0&&<span><FileText/>{n.reports}</span>}{n.contributions>0&&<span><CheckCircle/>{n.contributions}</span>}</>}</span><ProgressBar value={e.progress??0}/></div>};
  return <section className="surface okr-card"><header className="card-head"><h3>{title}</h3><div className="head-actions"><Button onClick={onCheckin} disabled={!onCheckin}>Cập nhật tiến độ</Button><Button disabled title="Ngoài phạm vi prototype">Tạo mới</Button></div></header>
-  {objectives.length?shown.map((o,i)=><React.Fragment key={o.id}><Row e={o} index={i} cls="objective"/>{children(o).map((k,j)=><Row key={k.id} e={k} index={j} cls="child"/>)}</React.Fragment>):<Empty title="Chưa có mục tiêu" text="Các mục tiêu được tạo sẽ xuất hiện tại đây."/>}
+  {objectives.length?shown.map((o,i)=><React.Fragment key={o.id}><Row e={o} index={i} cls="objective"/>{after?.(o)}{children(o).map((k,j)=><Row key={k.id} e={k} index={j} cls="child"/>)}</React.Fragment>):<Empty title="Chưa có mục tiêu" text="Các mục tiêu được tạo sẽ xuất hiện tại đây."/>}
   {objectives.length>2&&<button className="okr-more" onClick={()=>setExpanded(!expanded)}>{expanded?'Thu gọn':'Xem thêm'}</button>}
  </section>;
 }

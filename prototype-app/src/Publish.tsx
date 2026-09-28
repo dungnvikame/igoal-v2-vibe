@@ -1,11 +1,11 @@
 import React,{useEffect,useState} from 'react';
 import {ArrowLeft,PaperPlaneTilt,Target,UserCircle,Flag,Hash,LockSimple,Eye,PencilSimple,Sparkle,ArrowCounterClockwise,CheckCircle,WarningCircle,CircleNotch,ArrowSquareOut,CaretRight,ShareNetwork} from 'phosphor-react';
-import {Report,Section,Destination,Publication,DestKind,kindLabel} from './model';
+import {Report,Section,Destination,Publication,DestKind,kindLabel,projects} from './model';
 import {useStore} from './store';
-import {Button,Badge,Modal,AutoTextarea,nowTime,onActivate} from './ui';
+import {Button,Badge,Modal,AutoTextarea,Blocks,nowTime,onActivate} from './ui';
 import {KIND_ICON} from './ReportHub';
 import {ShareInput,ShareOption,sharesFrom,shareNames} from './Share';
-import {destinationsFor,defaultSelection,originOf,sameSections,runAi,buildPublish,publicationsOf,MASK} from './publishing';
+import {destinationsFor,defaultSelection,defaultContent,originOf,sameSections,runAi,buildPublish,publicationsOf,MASK} from './publishing';
 
 const DEST_ICON:Record<DestKind,React.ElementType>={eks:Target,project:Flag,manager:UserCircle,slack:Hash};
 /** Đường dẫn nơi báo cáo sẽ nằm, hiện trên đầu khung xem trước. */
@@ -17,7 +17,7 @@ function Masked({text}:{text:string}){const parts=text.split(MASK);return <>{par
 /** Tin nhắn Slack mô phỏng: bot iGoal, tiêu đề đậm, từng mục, nút mở trên iGoal. */
 export function SlackPreview({channel,title,sections,owner}:{channel:string;title:string;sections:Section[];owner:string}){
  const shown=sections.filter(s=>s.text.trim());
- return <div className="slack-mock"><div className="slack-channel"><Hash/> {channel.replace('#','')}</div><div className="slack-msg"><span className="slack-bot">iG</span><div><div className="slack-name"><strong>iGoal</strong><small>APP · {nowTime()}</small></div><p className="slack-lead">{owner} vừa xuất bản báo cáo</p><div className="slack-card"><strong>{title}</strong>{shown.map(s=><div key={s.label}><b>{s.label}</b><p className="preserve"><Masked text={s.text}/></p></div>)}{!shown.length&&<p className="hint">Không còn nội dung nào để gửi.</p>}<span className="slack-link">Xem trên iGoal ↗</span></div></div></div></div>;
+ return <div className="slack-mock"><div className="slack-channel"><Hash/> {channel.replace('#','')}</div><div className="slack-msg"><span className="slack-bot">iG</span><div><div className="slack-name"><strong>iGoal</strong><small>APP · {nowTime()}</small></div><p className="slack-lead">{owner} vừa xuất bản báo cáo</p><div className="slack-card"><strong>{title}</strong><Blocks sections={shown} render={(s,i)=><div key={i}><b>{s.label}</b><p className="preserve"><Masked text={s.text}/></p></div>}/>{!shown.length&&<p className="hint">Không còn nội dung nào để gửi.</p>}<span className="slack-link">Xem trên iGoal ↗</span></div></div></div></div>;
 }
 
 /** Khung xem trước tại một nơi: dòng báo cáo trong danh sách của nơi đó + nội dung đầy đủ. Slack dùng SlackPreview. */
@@ -25,7 +25,7 @@ function DestPreview({dest,report,sections}:{dest:Destination;report:Report;sect
  if(dest.kind==='slack')return <SlackPreview channel={dest.channel!} title={report.title} sections={sections} owner={report.owner}/>;
  const Icon=KIND_ICON[report.kind];const shown=sections.filter(s=>s.text.trim());
  return <div className="pub-page"><div className="pub-row"><span className={'record-icon '+report.kind}><Icon size={18}/></span><span className="pub-row-text"><strong>{report.title}</strong><small>{report.owner} · Hôm nay · {kindLabel[report.kind]}{report.track?' · '+report.track:''}</small></span>{dest.kind==='manager'&&<Badge><Eye size={12}/> Người xem</Badge>}</div>
-  <article className="pub-doc"><h2>{report.title}</h2>{shown.map(s=><section className="reading-section" key={s.label}><h3>{s.label}</h3><p className="preserve"><Masked text={s.text}/></p></section>)}{!shown.length&&<p className="hint">Không còn nội dung nào ở nơi này.</p>}</article></div>;
+  <article className="pub-doc"><h2>{report.title}</h2><Blocks sections={shown} render={(s,i)=><section className="reading-section" key={i}><h3>{s.label}</h3><p className="preserve"><Masked text={s.text}/></p></section>}/>{!shown.length&&<p className="hint">Không còn nội dung nào ở nơi này.</p>}</article></div>;
 }
 
 /** Danh sách trạng thái gửi từng nơi + nút điều hướng. `revealed` < số dòng → các dòng sau hiện "Đang gửi…" (hiệu ứng gửi lần lượt). */
@@ -62,8 +62,8 @@ export function PublishFlow({report,back,close,openReport,notify}:{report:Report
  const [failSlack,setFailSlack]=useState(false),[doneId,setDoneId]=useState<string|null>(null),[revealed,setRevealed]=useState(0);
  const actions=usePublicationActions(openReport,notify);
 
- const content=(id:string)=>variants[id]??report.sections;
- const customized=(id:string)=>!!variants[id]&&!sameSections(variants[id],report.sections);
+ const content=(id:string)=>variants[id]??defaultContent(report,id);
+ const customized=(id:string)=>!!variants[id]&&!sameSections(variants[id],defaultContent(report,id));
  const cur=dests.find(x=>x.id===active)??dests[0];
  const chosen=dests.filter(x=>selected.includes(x.id));
  const pubs=doneId?data.publications.filter(p=>p.originId===doneId):[];
@@ -114,7 +114,7 @@ export function PublishFlow({report,back,close,openReport,notify}:{report:Report
     <div className="row"><div className="inner-tabs compact"><button className={mode==='preview'?'active':''} onClick={()=>setMode('preview')}><Eye/> Xem trước</button><button className={mode==='edit'?'active':''} onClick={()=>setMode('edit')}><PencilSimple/> Chỉnh nội dung</button></div></div></div>
    {customized(active)&&<div className="pub-custom"><span>Nội dung ở nơi này đã chỉnh riêng, khác bản gốc.</span><button className="text-button" onClick={resetActive}><ArrowCounterClockwise/> Dùng lại bản gốc</button></div>}
    {mode==='preview'?<DestPreview dest={cur} report={report} sections={sections}/>
-    :<div className="pub-edit">{sections.map((s,i)=><div className="ws" key={s.label}><h3>{s.label}</h3><AutoTextarea className="block-text" aria-label={s.label+' · '+cur.label} value={s.text} placeholder="Để trống nếu không muốn mục này xuất hiện ở đây" rows={Math.max(2,s.text.split('\n').length+1)} onChange={e=>setSection(i,e.target.value)}/></div>)}<p className="hint">Chỉ thay đổi nội dung ở {cur.label}. Các nơi khác giữ nguyên.</p></div>}
+    :<div className="pub-edit">{sections.map((s,i)=><div className="ws" key={i}><h3>{s.label}{s.project&&<small className="ws-optional">· Báo cáo dự án {projects.find(p=>p.id===s.project)?.label}</small>}</h3><AutoTextarea className="block-text" aria-label={s.label+' · '+cur.label} value={s.text} placeholder="Để trống nếu không muốn mục này xuất hiện ở đây" rows={Math.max(2,s.text.split('\n').length+1)} onChange={e=>setSection(i,e.target.value)}/></div>)}<p className="hint">Chỉ thay đổi nội dung ở {cur.label}. Các nơi khác giữ nguyên.</p></div>}
   </main>
   <aside className="pub-ai" aria-label="Chỉnh bằng AI"><h2><Sparkle weight="fill"/> Chỉnh bằng AI</h2><p className="hint">Mô tả cách chỉnh nội dung cho nơi xuất hiện.</p>
    <div className="pub-quick">{quick.map(q=><button key={q} onClick={()=>runPrompt(q)}>{q}</button>)}</div>

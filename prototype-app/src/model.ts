@@ -30,7 +30,20 @@ export const projectMeta:Record<string,{owner:string;unit:string;team:string;tag
 /** Mã hiển thị kiểu iGoal: O1/E1 cho mục tiêu, KR2/KS1 lấy từ tiền tố label. */
 export const entityCode=(e:Relation,index:number)=>{const m=e.label.match(/^(KR|KS)\d+/);if(m)return m[0];return e.type==='Objective'?'O'+(index+1):e.type==='EKS'?'E'+(index+1):e.type};
 export const entityText=(e:Relation)=>e.label.replace(/^(KR|KS)\d+\s*·\s*/,'');
-export type Section = {label:string;text:string;sources:string[]};
+/** Một mục báo cáo. `project` = mục thuộc khung "Báo cáo dự án" (báo cáo tuần cá nhân); không có = báo cáo chung. */
+export type Section = {label:string;text:string;sources:string[];project?:string};
+/** Một khung trong báo cáo: báo cáo chung (`project` undefined) hoặc báo cáo riêng của một dự án. `i` = vị trí trong `sections`. Chung luôn đứng đầu. */
+export type SectionBlock={project?:string;items:{s:Section;i:number}[]};
+export const blocksOf=(sections:Section[]):SectionBlock[]=>{const out:SectionBlock[]=[];sections.forEach((s,i)=>{let b=out.find(x=>x.project===s.project);if(!b){b={project:s.project,items:[]};if(s.project)out.push(b);else out.unshift(b)}b.items.push({s,i})});return out};
+// ---------- Mục tiêu team (Team OKR) & liên kết EKS ----------
+/** Team OKR mock. Không gắn trực tiếp vào báo cáo: báo cáo gắn EKS, EKS liên kết lên mục tiêu team (thiết lập ở My EKS). */
+export type TeamGoal={id:string;code:string;label:string;team:string;parent?:string;progress?:number};
+export const teamGoals:TeamGoal[]=[
+ {id:'to1',code:'O1',label:'Vận hành nền tảng nội bộ ổn định, được dùng hằng ngày',team:'tech',progress:35},
+ {id:'tkr1',code:'KR1',label:'80% nhân sự gửi báo cáo tuần trên iGoal',team:'tech',parent:'to1',progress:40},
+ {id:'tkr2',code:'KR2',label:'Sản phẩm nội bộ sau launch không có sự cố nghiêm trọng',team:'tech',parent:'to1',progress:70},
+ {id:'tkr3',code:'KR3',label:'Thời gian tổng hợp báo cáo quản lý dưới 30 phút/tuần',team:'tech',parent:'to1',progress:15},
+];
 export type ActionItem = {task:string;owner:string;deadline:string};
 /** Một card "Cập nhật tiến độ KS" trong Báo cáo check-in (bám UI iGoal hiện tại). Tiến độ chỉ lưu trong báo cáo, prototype không mutation KS. */
 export type Checkin = {ksId:string;progress:number;result:string;next:string;issue:string;file:string};
@@ -87,7 +100,8 @@ export type DestKind='eks'|'project'|'manager'|'slack';
 export type Destination={id:string;kind:DestKind;label:string;hint:string;group:'Cá nhân'|'Dự án'|'Kênh Slack';projectId?:string;channel?:string;userId?:string};
 /** Kết quả gửi tới một nơi. `reportId` = bản báo cáo tại nơi đó (Slack không có, nội dung lưu ở `sections`). */
 export type Publication={id:string;originId:string;destId:string;kind:DestKind;label:string;reportId?:string;status:'SENT'|'FAILED';at:string;time:string;customized:boolean;sections?:Section[];title?:string};
-export type Data = {reports:Report[];contributions:Contribution[];users:User[];shares:Share[];comments:Comment[];publications:Publication[]};
+/** `alignments[eksId]` = id các mục tiêu team (TeamGoal) mà EKS đóng góp vào, thiết lập ở My EKS. */
+export type Data = {reports:Report[];contributions:Contribution[];users:User[];shares:Share[];comments:Comment[];publications:Publication[];alignments:Record<string,string[]>};
 export const kindLabel = {weekly:'Báo cáo tuần',meeting:'Báo cáo cuộc họp',instant:'Báo cáo tức thời',checkin:'Báo cáo check-in'};
 export const today='2026-09-22';
 export const uid=()=>crypto.randomUUID();
@@ -138,7 +152,7 @@ export function seed():Data{return {reports:[
  contrib({id:'c-onboard',title:'Onboarding 6 team Game/App lên iGoal trong Pilot',impact:'4/6 team gửi báo cáo tuần đầu; MAU pilot 48%.',role:'Đóng góp chính',owner:'Nguyệt',date:'2026-09-19',relations:['igoal','kr2'],evidence:[{type:'Report',label:'Báo cáo tuần Kinh doanh · 15–19/09',value:'ua-w38'}],collaborators:['Dũng'],confirmationStatus:'NEED_MORE_INFO',note:'Bổ sung danh sách team đã gửi báo cáo và link recap Slack.'}),
  contrib({id:'c-visual',title:'Bộ visual onboarding iGoal và video hướng dẫn',impact:'Người dùng mới hiểu luồng báo cáo trong 2 phút; giảm câu hỏi lặp lại trên Slack.',role:'Chủ trì',owner:'Quý',date:'2026-09-18',relations:['igoal','ks2'],evidence:[{type:'Report',label:'Báo cáo tuần Creative · 15–19/09',value:'creative-w38'},{type:'File',label:'onboarding-visual-v3.fig',value:'onboarding-visual-v3.fig'}]}),
  contrib({id:'c-draft',title:'Chuẩn hóa mẫu biên bản họp cho dự án',impact:'',date:'2026-09-22',relations:['igoal','sprint1'],recordStatus:'DRAFT'}),
- ],users:people.map(u=>({...u})),publications:[],shares:[
+ ],users:people.map(u=>({...u})),publications:[],alignments:{eks1:['tkr1','tkr3'],eks2:['tkr2']},shares:[
  // Lục (manager, không phải admin) được chia sẻ trực tiếp báo cáo tuần của Dũng và Pilot. Sprint Planning vừa trực tiếp vừa qua team BU Game → gỡ trực tiếp vẫn xem được.
  share('sh-prev-luc','previous','user','luc','dung','2026-09-16'),
  share('sh-pilot-luc','pilot-w1','user','luc','dung','2026-09-13'),
@@ -173,7 +187,7 @@ export const projectCadence={phase:'Global Launch',every:'1 tuần/lần',next:'
 /** Báo cáo tuần đã gửi gần nhất cùng ngữ cảnh: cùng người viết (cá nhân) hoặc cùng dự án (PM). */
 export const previousWeekly=(reports:Report[],exceptId?:string,scope:Report['scope']='personal',projectId?:string,owner?:string)=>reports.filter(r=>r.kind==='weekly'&&r.scope===scope&&r.status==='PUBLISHED'&&(!projectId||r.relations.includes(projectId))&&(!owner||r.owner===owner)&&r.id!==exceptId).sort((a,b)=>b.date.localeCompare(a.date))[0];
 /** Từng dòng trong "Kế hoạch tuần tới" của báo cáo trước trở thành một item carry-over. */
-export const carryItems=(prev?:Report)=>prev?.sections.find(s=>s.label==='Kế hoạch tuần tới')?.text.split('\n').map(t=>t.trim()).filter(Boolean)??[];
+export const carryItems=(prev?:Report)=>prev?.sections.filter(s=>s.label==='Kế hoạch tuần tới').flatMap(s=>s.text.split('\n')).map(t=>t.trim()).filter(Boolean)??[];
 /** Mở lại nháp tuần hiện tại nếu đã có, tránh tạo trùng khi bấm "Viết báo cáo tuần này" nhiều lần. */
 export const currentWeekly=(reports:Report[])=>reports.find(r=>r.kind==='weekly'&&r.scope==='personal'&&r.status==='DRAFT')||blankReport('weekly','personal');
 /** Ngữ cảnh gợi ý: báo cáo tuần cá nhân (nguồn = báo cáo dự án) hay báo cáo tuần dự án do PM viết (nguồn = báo cáo tuần của member + check-in). */

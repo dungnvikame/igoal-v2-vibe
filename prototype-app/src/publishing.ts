@@ -26,8 +26,19 @@ export function destinationsFor(d:Data,r:Report,userId:string):Destination[]{
  return list;
 }
 
-/** Chọn sẵn: nơi gốc + dự án đã gắn trong Liên kết (nếu có quyền viết). */
-export const defaultSelection=(r:Report,dests:Destination[])=>dests.filter(x=>x.id===originOf(r)||(x.kind==='project'&&r.relations.includes(x.projectId!))).map(x=>x.id);
+/** Chọn sẵn: nơi gốc + dự án đã gắn trong Liên kết hoặc có khung "Báo cáo dự án" (nếu có quyền viết). */
+export const defaultSelection=(r:Report,dests:Destination[])=>dests.filter(x=>x.id===originOf(r)||(x.kind==='project'&&(r.relations.includes(x.projectId!)||r.sections.some(s=>s.project===x.projectId)))).map(x=>x.id);
+
+/**
+ * Nội dung mặc định tại một nơi (trước khi user chỉnh riêng):
+ * - Dự án / kênh Slack của dự án có khung "Báo cáo dự án" trong báo cáo → chỉ nội dung khung đó (bỏ đánh dấu `project` vì đã ở đúng dự án).
+ * - Nơi khác (My EKS, quản lý, dự án không có khung) → toàn bộ báo cáo, gồm báo cáo chung và mọi khung dự án.
+ */
+export function defaultContent(r:Report,destId:string):Section[]{
+ const pid=destId.match(/^(?:project|slack):(.+)$/)?.[1];
+ const own=pid?r.sections.filter(s=>s.project===pid):[];
+ return own.length?own.map(({project,...s})=>s):r.sections;
+}
 
 export const sameSections=(a:Section[],b:Section[])=>JSON.stringify(a.map(s=>s.text))===JSON.stringify(b.map(s=>s.text));
 
@@ -93,10 +104,10 @@ const relationsFor=(r:Report,projectId:string)=>[projectId,...r.relations.filter
  * `failSlack` = demo Slack lỗi.
  */
 export function buildPublish(d:Data,master:Report,dests:Destination[],variants:Record<string,Section[]>,userId:string,time:string,failSlack:boolean){
- const origin=originOf(master);const content=(id:string)=>variants[id]??master.sections;
+ const origin=originOf(master);const content=(id:string)=>variants[id]??defaultContent(master,id);
  // Mục bị làm trống ở một nơi (sửa tay / AI) thì không xuất hiện ở nơi đó.
  const shown=(id:string)=>content(id).filter(s=>s.text.trim());
- const customized=(id:string)=>!sameSections(content(id),master.sections);
+ const customized=(id:string)=>!sameSections(content(id),defaultContent(master,id));
  const root:Report={...master,sections:content(origin),status:'PUBLISHED',reviewed:true,variants:undefined};
  const reports:Report[]=[root],shares:Share[]=[],publications:Publication[]=[];
  const pub=(x:Destination,extra:Partial<Publication>)=>publications.push({id:uid(),originId:root.id,destId:x.id,kind:x.kind,label:x.label,status:'SENT',at:today,time,customized:customized(x.id),...extra});
