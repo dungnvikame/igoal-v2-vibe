@@ -30,7 +30,7 @@ Trước khi demo: **Thiết lập demo → Khôi phục dữ liệu demo ban đ
 3. Bấm một báo cáo → các dòng của nó, **đã chia sẵn theo mục sẽ vào** (Kết quả / Khó khăn / Kế hoạch). Bấm ＋ để chèn; dòng đã thêm có ✓. "← Tất cả báo cáo" để chọn nguồn khác. Nguồn hiện nhỏ dưới mục.
 4. Sửa nội dung tùy ý như văn bản thường.
 5. **Liên kết** nằm ở hàng meta trên cùng: EKS của user gắn sẵn (× để gỡ); chèn gợi ý từ dự án nào thì dự án đó tự gắn; KR/KS/Mốc của nguồn hiện dạng chip viền nét đứt, bấm là thêm. "＋ Thêm" mở ô tìm kiếm gom theo dự án. Không có bước xác nhận chặn nút Gửi.
-6. **Gửi báo cáo** → màn post-submit hiện 2 gợi ý Contribution. Rời trang khi chưa lưu sẽ có cảnh báo.
+6. **Xuất bản** → màn chọn nơi xuất hiện + xem trước + cấu hình chia sẻ (Scenario 7); chỉ khi bấm **Xuất bản** trên màn đó mới gửi. Không còn gợi ý Contribution sau khi gửi. Rời trang khi chưa lưu sẽ có cảnh báo.
 7. **Báo cáo tuần của PM** (tạo trong Dự án → Tổng hợp báo cáo): cùng editor, nhưng gợi ý trong từng mục lấy từ **báo cáo tuần của member và check-in**: quét báo cáo tuần cá nhân của member đã tag dự án và check-in KS trong kỳ, gom theo người. PM tổng hợp kết quả team bằng cách bấm Thêm. "Báo cáo cũ" là các báo cáo tuần trước của dự án.
 
 ### Scenario 2 — Meeting Report từ audio
@@ -41,7 +41,7 @@ Trước khi demo: **Thiết lập demo → Khôi phục dữ liệu demo ban đ
 5. **Lưu iGoal & gửi Slack** → success → **Xem biên bản vừa lưu**. Report xuất hiện trong list và Nhật ký.
 
 ### Scenario 3 — Contribution + xác nhận
-1. Từ post-submit Weekly → **Ghi nhận Contribution** → form prefilled → **Gửi xác nhận**. Card chuyển sang "Đã ghi nhận".
+1. Mở một báo cáo đã gửi (vd. Dự án iGoal → **Tổng kết Pilot tuần 1**) → nút **Ghi nhận đóng góp** trên bar → bấm ＋ ở một dòng → form prefilled → **Gửi xác nhận**. Dòng đó chuyển sang ✓.
 2. **Thiết lập demo** → đổi vai sang **Lục · BU Head** → tab **Xác nhận đóng góp** chỉ thấy bản đã gửi giao cho mình; bấm ô "Chờ xác nhận" để lọc.
 3. Bấm một dòng → panel phải → **Yêu cầu bổ sung** (bắt buộc ghi chú) hoặc **Xác nhận**.
 4. Đổi lại vai Dũng → item "Cần bổ sung" → **Bổ sung** → note của Lục vẫn còn → sửa → **Gửi xác nhận** lại.
@@ -56,6 +56,21 @@ Trước khi demo: **Thiết lập demo → Khôi phục dữ liệu demo ban đ
 2. Bấm một mốc → mở bản ghi gốc. Bấm chip relation ở bất kỳ đâu cũng mở cùng drawer. Cùng một view cho member (EKS của mình), PM (KR của dự án) và manager (mở My EKS của member).
 3. **Tổng hợp báo cáo → Lọc**: mở bộ lọc Trạng thái (Nháp / Đã gửi) · Loại báo cáo · Dự án (Dự án chỉ ở My EKS); số filter đang bật hiện trên nút Lọc. Tìm kiếm luôn hiện.
 4. **My EKS**: dòng E1 / E2 bấm được như trên, dẫn tới báo cáo tuần và contribution đã tag EKS.
+
+### Scenario 6 — Chia sẻ báo cáo (kiểu Google Drive)
+1. Vai **Dũng** → Dự án iGoal → **Sprint Planning** → nút **Chia sẻ** trên bar. Dialog liệt kê mọi nguồn quyền: Chủ sở hữu · Thành viên dự án iGoal · Team BU Game · Lục (có dòng "Cũng xem được: Qua team BU Game").
+2. Gõ tên người / team → Enter hoặc bấm để thêm → vai trò cố định **Người xem · xem & bình luận** → **Chia sẻ**.
+3. Bấm × ở dòng Lục → toast "Đã gỡ chia sẻ trực tiếp với Lục · vẫn xem được: Qua team BU Game".
+4. **Thiết lập demo** → đổi vai **Lục** (BU Head, không phải admin): sidebar **Được chia sẻ với tôi** có 4 báo cáo, lọc nhanh Tất cả / Trực tiếp / Qua team, nút Lọc mở Loại · Người chia sẻ · Dự án · Thời gian chia sẻ, sắp xếp theo ngày chia sẻ / ngày báo cáo. Dự án iGoal chỉ còn báo cáo được chia sẻ. Mở báo cáo: badge **Người xem**, không có nút Chia sẻ, panel **Bình luận** gửi được, tệp đính kèm tải được.
+5. **Thiết lập demo → Nhân sự**: vai **Nguyệt** thấy "Họp khởi động My iKame" (qua team UA) + "Báo cáo tuần 09–15/09" (trực tiếp). Chuyển Nguyệt sang team Creative → chỉ còn báo cáo chia sẻ trực tiếp. Bỏ tick **Hoạt động** → màn "Tài khoản đã ngừng hoạt động"; trong dialog chia sẻ của Dũng, dòng Nguyệt mờ "không còn quyền".
+### Scenario 7 — Xuất bản đa nơi (nơi xuất hiện + AI chỉnh theo nơi)
+1. Vai **Dũng** → **My EKS** → **Tạo báo cáo mới → Báo cáo tuần**, viết vài dòng (có số liệu, có ý về iGoal và iWiki; chèn từ **Lấy từ báo cáo** thì dự án nguồn tự gắn và được chọn sẵn ở bước sau). Bấm **Xuất bản** (nháp được lưu trước).
+2. Màn **Xuất bản**: trái là **Nơi xuất hiện** gom Cá nhân (My EKS · Quản lý trực tiếp) / Dự án / Kênh Slack. Chỉ hiện nơi được phép viết: Dũng thấy iGoal, iWiki nhưng **không** thấy My iKame (chỉ là thành viên). Nơi viết (My EKS, hoặc dự án đang mở nếu viết từ dự án) có khóa "luôn lưu".
+3. Tick / bỏ tick để chọn nơi; bấm vào một nơi để **Xem trước** đúng cách nó hiện ở đó (dòng trong danh sách + nội dung; Slack là tin nhắn mô phỏng). Tab **Chỉnh nội dung** sửa riêng cho nơi đó (tag **Riêng**, "Dùng lại bản gốc" để bỏ).
+4. Panel **Chỉnh bằng AI**: bấm gợi ý hoặc gõ yêu cầu, chọn **Chỉ nơi đang xem** / **Tất cả nơi đã chọn**. Demo hiểu: *Ẩn các con số kinh doanh* (giữ ngày, mã KR/Sprint), *Chỉ tập trung vào báo cáo của dự án iWiki* (bỏ ý không thuộc iWiki), *Rút gọn*, *Bỏ mục …*. Kết quả liệt kê thay đổi + **Hoàn tác**; phần ẩn được tô vàng.
+5. Khối **Chia sẻ** (trái, dưới cùng): thêm người / team, vai trò Người xem, chỉ tạo khi bấm Xuất bản. Tick **Demo lỗi gửi Slack** nếu muốn xem trạng thái lỗi.
+6. **Xuất bản tới n nơi** → màn **Trạng thái gửi**: từng nơi chuyển từ "Đang gửi…" sang Đã gửi / Gửi không thành công (Slack có **Thử lại**), mỗi dòng có **Mở báo cáo** (Slack: **Xem tin nhắn**). Bản ở iWiki chỉ có nội dung iWiki; bản gửi quản lý nằm ở **Được chia sẻ với tôi** của Long.
+7. Mở lại báo cáo gốc bất kỳ lúc nào: nút **n nơi xuất hiện** trên bar → panel cùng trạng thái + điều hướng. "Quay lại soạn" từ màn Xuất bản giữ nguyên nội dung riêng theo nơi.
 
 ## Dữ liệu mẫu (để xem cách dữ liệu nối nhau)
 
@@ -80,6 +95,23 @@ Trước khi demo: **Thiết lập demo → Khôi phục dữ liệu demo ban đ
 - Weekly Report dùng template 3 mục: Kết quả tuần này · Khó khăn / vấn đề · Kế hoạch tuần tới. Mục "Kế hoạch tuần tới" là nguồn carry-over cho tuần sau.
 - Kế hoạch tuần trước = từng dòng của section "Kế hoạch tuần tới" trong báo cáo tuần trước, hiện trong gợi ý của mục Kết quả ("Hoàn thành: …") và Kế hoạch ("Tiếp tục: …"); chỉ lấy báo cáo của chính người viết, không đụng tiến độ mục tiêu.
 - Timeline sinh từ relation, không copy nội dung report vào Project.
+- **Chia sẻ báo cáo** (logic ở `src/sharing.ts`, dữ liệu `Data.shares` / `Data.comments` / `Data.users`):
+  - Ai được quyền chia sẻ: **người viết (owner)** + **ADMIN của entity chứa báo cáo** (dự án với báo cáo dự án; team người viết với báo cáo cá nhân). Manager không mặc định được chia sẻ.
+  - Chia sẻ cho **cá nhân** hoặc **team**. Một vai trò duy nhất **Người xem**: xem + bình luận + tải tệp đính kèm, **không sửa** (bản nháp của người khác cũng chỉ mở chế độ xem).
+  - Nguồn quyền: owner · admin entity · thành viên dự án · chia sẻ trực tiếp · chia sẻ qua team. **Quyền hiệu lực = quyền cao nhất** (Chủ sở hữu > Quản trị > Người xem). Gỡ chia sẻ trực tiếp chỉ bỏ nguồn đó; còn nguồn team / entity thì vẫn xem được.
+  - Chia sẻ team tính theo **team hiện tại**: chuyển team → mất quyền từ team cũ, chia sẻ trực tiếp vẫn giữ. Account **inactive** → mất toàn bộ quyền ngay (kể cả báo cáo của mình).
+  - **Tệp đính kèm** kế thừa 100% quyền của báo cáo; không xem được báo cáo thì không mở / tải được tệp (drawer nguồn và chi tiết báo cáo hiện màn chặn).
+  - Bản nháp chỉ người viết thấy. Tag relation không mở quyền (spec). Danh sách báo cáo dự án, Nhật ký, tìm kiếm topbar chỉ trả báo cáo user có quyền xem.
+  - Màn **Được chia sẻ với tôi** chỉ gồm chia sẻ trực tiếp / qua team (không gồm quyền có sẵn từ entity), không gồm báo cáo của chính mình.
+- **Xuất bản đa nơi** (logic ở `src/publishing.ts`, UI `src/Publish.tsx`, dữ liệu `Data.publications`, `Report.variants/origin/destination`):
+  - Editor Weekly / Tức thời: nút **Xuất bản** mở màn Xuất bản (không gửi ngay). Meeting giữ luồng Xem trước & gửi Slack riêng; Check-in giữ nút Gửi.
+  - Nơi xuất hiện: **My EKS**, **Quản lý trực tiếp** (`managerOf`), **dự án** user có quyền viết (`reportWriters` — khác thành viên chỉ xem), **kênh Slack** của các dự án đó (`projectChannels`). Nơi không có quyền viết **không hiển thị**.
+  - Nơi viết là bản gốc, luôn lưu, không bỏ chọn được (iGoal là source of truth). Dự án đã gắn trong Liên kết được chọn sẵn.
+  - Mỗi nơi có nội dung riêng, mặc định = nội dung editor; sửa tay / AI chỉ tác động nơi đang xem hoặc mọi nơi đã chọn. Mục bị làm trống không xuất hiện ở nơi đó.
+  - Mỗi nơi (trừ Slack) nhận **một bản báo cáo riêng** trỏ `origin` về bản gốc. Bản ở dự án là báo cáo dự án (quyền theo thành viên dự án), liên kết chỉ giữ mục tiêu thuộc dự án đó. Bản cho quản lý = bản riêng + chia sẻ trực tiếp (Người xem), không nằm trong My EKS.
+  - Slack gửi sau khi lưu iGoal; lỗi Slack không ảnh hưởng nơi khác, Thử lại chỉ gửi lại Slack. Chỉ người viết thấy trạng thái gửi từng nơi (panel **Nơi xuất hiện**).
+  - Chia sẻ cấu hình trên màn Xuất bản áp cho bản ở nơi viết, cùng rule Chia sẻ báo cáo ở trên. Nhật ký dự án không hiện trùng báo cáo cá nhân đã có bản ở dự án.
+  - AI là mock chạy bằng rule (regex / từ khóa dự án), không gọi model.
 
 ## UI bám iGoal hiện tại (đối chiếu screenshot 22/09/2026)
 
@@ -113,6 +145,7 @@ Trước khi demo: **Thiết lập demo → Khôi phục dữ liệu demo ban đ
 
 - Không có URL route. F5 về trang Dự án; editor chưa lưu sẽ mất.
 - `owner` mọi bản ghi luôn là Dũng, kể cả khi đổi vai demo.
+- Chia sẻ: thành viên / admin entity là mock cố định (`entityAdmins`, `projectMembers` trong `model.ts`). Long là admin team Technology (được chia sẻ báo cáo cá nhân của Dũng) nhưng prototype chưa có màn để Long mở báo cáo cá nhân của member. "Sao chép liên kết" chỉ mô phỏng (không có URL route). Không gửi thông báo cho người nhận.
 - Chỉ có dự án iGoal; `relations.includes('igoal')` hardcode ở list/timeline.
-- Transcript, wording assistant, AI summary là mock chuỗi, không gọi model.
+- Transcript, wording assistant, AI summary, AI chỉnh nội dung theo nơi xuất hiện là mock, không gọi model. Không gửi Slack thật.
 - `preview.html` là mockup tĩnh cũ, không liên quan app.

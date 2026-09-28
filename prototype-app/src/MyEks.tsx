@@ -8,7 +8,8 @@ export function MyEks({user,create,edit,open,source}:{user:string;create:()=>voi
  const {data}=useStore();const me=people.find(p=>p.id===user);
  const eks=entities.filter(e=>e.type==='EKS');
  // Chỉ báo cáo cá nhân của chính user (member khác cũng có báo cáo tuần cá nhân trong mock).
- const reports=data.reports.filter(r=>r.scope==='personal'&&r.owner===me?.name);
+ // Bản gửi riêng cho quản lý không nằm trong EKS (xem ở panel Nơi xuất hiện của bản gốc).
+ const reports=data.reports.filter(r=>r.scope==='personal'&&r.owner===me?.name&&r.destination!=='manager');
  return <><div className="eks-layout"><OkrCard title="Mục tiêu (EKS)" objectives={eks} children={()=>[]} onCheckin={()=>edit(blankReport('checkin','personal'))}/>
   <aside className="surface profile-card"><span className="avatar large">{me?.name.trim().split(/\s+/).pop()?.[0]}</span><strong>{me?.name}</strong><span>{me?.role}</span><span>Technology</span></aside></div>
   <ReportHub reports={reports} create={create} edit={edit} open={open} source={source}/></>;
