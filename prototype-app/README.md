@@ -57,6 +57,13 @@ Trước khi demo: **Thiết lập demo → Khôi phục dữ liệu demo ban đ
 3. **Tổng hợp báo cáo → Lọc**: mở bộ lọc Trạng thái (Nháp / Đã gửi) · Loại báo cáo · Dự án (Dự án chỉ ở My EKS); số filter đang bật hiện trên nút Lọc. Tìm kiếm luôn hiện.
 4. **My EKS**: dòng E1 / E2 bấm được như trên, dẫn tới báo cáo tuần và contribution đã tag EKS.
 
+### Scenario 6 — Chia sẻ báo cáo (kiểu Google Drive)
+1. Vai **Dũng** → Dự án iGoal → **Sprint Planning** → nút **Chia sẻ** trên bar. Dialog liệt kê mọi nguồn quyền: Chủ sở hữu · Thành viên dự án iGoal · Team BU Game · Lục (có dòng "Cũng xem được: Qua team BU Game").
+2. Gõ tên người / team → Enter hoặc bấm để thêm → vai trò cố định **Người xem · xem & bình luận** → **Chia sẻ**.
+3. Bấm × ở dòng Lục → toast "Đã gỡ chia sẻ trực tiếp với Lục · vẫn xem được: Qua team BU Game".
+4. **Thiết lập demo** → đổi vai **Lục** (BU Head, không phải admin): sidebar **Được chia sẻ với tôi** có 4 báo cáo, lọc nhanh Tất cả / Trực tiếp / Qua team, nút Lọc mở Loại · Người chia sẻ · Dự án · Thời gian chia sẻ, sắp xếp theo ngày chia sẻ / ngày báo cáo. Dự án iGoal chỉ còn báo cáo được chia sẻ. Mở báo cáo: badge **Người xem**, không có nút Chia sẻ, panel **Bình luận** gửi được, tệp đính kèm tải được.
+5. **Thiết lập demo → Nhân sự**: vai **Nguyệt** thấy "Họp khởi động My iKame" (qua team UA) + "Báo cáo tuần 09–15/09" (trực tiếp). Chuyển Nguyệt sang team Creative → chỉ còn báo cáo chia sẻ trực tiếp. Bỏ tick **Hoạt động** → màn "Tài khoản đã ngừng hoạt động"; trong dialog chia sẻ của Dũng, dòng Nguyệt mờ "không còn quyền".
+
 ## Dữ liệu mẫu (để xem cách dữ liệu nối nhau)
 
 | Nhóm | Bản ghi |
@@ -80,6 +87,14 @@ Trước khi demo: **Thiết lập demo → Khôi phục dữ liệu demo ban đ
 - Weekly Report dùng template 3 mục: Kết quả tuần này · Khó khăn / vấn đề · Kế hoạch tuần tới. Mục "Kế hoạch tuần tới" là nguồn carry-over cho tuần sau.
 - Kế hoạch tuần trước = từng dòng của section "Kế hoạch tuần tới" trong báo cáo tuần trước, hiện trong gợi ý của mục Kết quả ("Hoàn thành: …") và Kế hoạch ("Tiếp tục: …"); chỉ lấy báo cáo của chính người viết, không đụng tiến độ mục tiêu.
 - Timeline sinh từ relation, không copy nội dung report vào Project.
+- **Chia sẻ báo cáo** (logic ở `src/sharing.ts`, dữ liệu `Data.shares` / `Data.comments` / `Data.users`):
+  - Ai được quyền chia sẻ: **người viết (owner)** + **ADMIN của entity chứa báo cáo** (dự án với báo cáo dự án; team người viết với báo cáo cá nhân). Manager không mặc định được chia sẻ.
+  - Chia sẻ cho **cá nhân** hoặc **team**. Một vai trò duy nhất **Người xem**: xem + bình luận + tải tệp đính kèm, **không sửa** (bản nháp của người khác cũng chỉ mở chế độ xem).
+  - Nguồn quyền: owner · admin entity · thành viên dự án · chia sẻ trực tiếp · chia sẻ qua team. **Quyền hiệu lực = quyền cao nhất** (Chủ sở hữu > Quản trị > Người xem). Gỡ chia sẻ trực tiếp chỉ bỏ nguồn đó; còn nguồn team / entity thì vẫn xem được.
+  - Chia sẻ team tính theo **team hiện tại**: chuyển team → mất quyền từ team cũ, chia sẻ trực tiếp vẫn giữ. Account **inactive** → mất toàn bộ quyền ngay (kể cả báo cáo của mình).
+  - **Tệp đính kèm** kế thừa 100% quyền của báo cáo; không xem được báo cáo thì không mở / tải được tệp (drawer nguồn và chi tiết báo cáo hiện màn chặn).
+  - Bản nháp chỉ người viết thấy. Tag relation không mở quyền (spec). Danh sách báo cáo dự án, Nhật ký, tìm kiếm topbar chỉ trả báo cáo user có quyền xem.
+  - Màn **Được chia sẻ với tôi** chỉ gồm chia sẻ trực tiếp / qua team (không gồm quyền có sẵn từ entity), không gồm báo cáo của chính mình.
 
 ## UI bám iGoal hiện tại (đối chiếu screenshot 22/09/2026)
 
@@ -113,6 +128,7 @@ Trước khi demo: **Thiết lập demo → Khôi phục dữ liệu demo ban đ
 
 - Không có URL route. F5 về trang Dự án; editor chưa lưu sẽ mất.
 - `owner` mọi bản ghi luôn là Dũng, kể cả khi đổi vai demo.
+- Chia sẻ: thành viên / admin entity là mock cố định (`entityAdmins`, `projectMembers` trong `model.ts`). Long là admin team Technology (được chia sẻ báo cáo cá nhân của Dũng) nhưng prototype chưa có màn để Long mở báo cáo cá nhân của member. "Sao chép liên kết" chỉ mô phỏng (không có URL route). Không gửi thông báo cho người nhận.
 - Chỉ có dự án iGoal; `relations.includes('igoal')` hardcode ở list/timeline.
 - Transcript, wording assistant, AI summary là mock chuỗi, không gọi model.
 - `preview.html` là mockup tĩnh cũ, không liên quan app.

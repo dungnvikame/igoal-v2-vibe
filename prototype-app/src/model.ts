@@ -37,14 +37,39 @@ export type Checkin = {ksId:string;progress:number;result:string;next:string;iss
 /** Mảng báo cáo ("Loại báo cáo" trên iGoal thật): PM → Sản phẩm, UA → Kinh doanh, Creative Lead → Creative (requirement 1). */
 export const tracks=['Sản phẩm','Kinh doanh','Creative'] as const;
 export type Track=typeof tracks[number];
-export type Report = {id:string;title:string;kind:'weekly'|'meeting'|'instant'|'checkin';scope:'personal'|'project';track?:Track;date:string;owner:string;status:'DRAFT'|'PUBLISHED';relations:string[];sections:Section[];actions:ActionItem[];checkins?:Checkin[];slack:'NOT_SENT'|'SENT'|'FAILED';channel:string;participants:string;audio:string;carry:string[];reviewed:boolean};
+export type Report = {id:string;title:string;kind:'weekly'|'meeting'|'instant'|'checkin';scope:'personal'|'project';track?:Track;date:string;owner:string;status:'DRAFT'|'PUBLISHED';relations:string[];sections:Section[];actions:ActionItem[];checkins?:Checkin[];attachments?:Attachment[];slack:'NOT_SENT'|'SENT'|'FAILED';channel:string;participants:string;audio:string;carry:string[];reviewed:boolean};
+/** Tệp đính kèm của báo cáo: không có quyền riêng, kế thừa 100% quyền xem của báo cáo chứa nó. */
+export type Attachment={name:string;size:string};
 /** Quản lý trực tiếp mock, hiển thị ở meta của mọi editor giống iGoal thật. */
 export const manager={id:'long',name:'Nguyễn Đức Long'};
 export const blankCheckin=(ksId:string):Checkin=>({ksId,progress:0,result:'',next:'',issue:'',file:''});
 export type Evidence = {type:'Report'|'URL'|'File';label:string;value:string};
 export type Contribution = {id:string;title:string;impact:string;role:string;owner:string;date:string;evidence:Evidence[];relations:string[];collaborators:string[];recordStatus:'DRAFT'|'SUBMITTED';confirmationStatus:'PENDING'|'CONFIRMED'|'NEED_MORE_INFO';confirmerId:string;note:string};
-export type Data = {reports:Report[];contributions:Contribution[]};
-export const people = [{id:'dung',name:'Nguyễn Việt Dũng',role:'Product Manager',canConfirm:false},{id:'luc',name:'Lục',role:'BU Head · Game',canConfirm:true}];
+// ---------- Chia sẻ báo cáo (Report Sharing) ----------
+export type Team={id:string;label:string};
+export const teams:Team[]=[{id:'tech',label:'Technology'},{id:'ua',label:'UA · Kinh doanh'},{id:'creative',label:'Creative'},{id:'game',label:'BU Game'}];
+/** Người dùng. `team`, `active` đổi được trong Thiết lập demo (chuyển team / nghỉ việc) nên bản đang dùng nằm trong `Data.users`. */
+export type User={id:string;name:string;role:string;team:string;active:boolean;canConfirm:boolean};
+export const people:User[]=[
+ {id:'dung',name:'Nguyễn Việt Dũng',role:'Product Manager',team:'tech',active:true,canConfirm:false},
+ {id:'luc',name:'Lục',role:'BU Head · Game',team:'game',active:true,canConfirm:true},
+ {id:'long',name:'Nguyễn Đức Long',role:'Head of Technology',team:'tech',active:true,canConfirm:false},
+ {id:'nguyet',name:'Nguyệt',role:'UA Lead',team:'ua',active:true,canConfirm:false},
+ {id:'quy',name:'Quý',role:'Creative Lead',team:'creative',active:true,canConfirm:false},
+ {id:'quynh',name:'Quỳnh',role:'Vận hành',team:'tech',active:true,canConfirm:false},
+];
+/** ADMIN theo entity (dự án hoặc team). Admin của entity chứa báo cáo được xem + chia sẻ báo cáo đó. Manager không tự có quyền này. */
+export const entityAdmins:Record<string,string[]>={igoal:['dung'],iwiki:['dung'],myikame:['long'],tech:['long']};
+/** Thành viên dự án: được xem báo cáo dự án (đã gửi) của dự án đó. Tag dự án vào báo cáo KHÔNG mở quyền. */
+export const projectMembers:Record<string,string[]>={igoal:['dung','nguyet','quy','quynh'],iwiki:['dung','quynh'],myikame:['long','dung']};
+/**
+ * Một lượt chia sẻ báo cáo cho cá nhân hoặc team. Chỉ có một vai trò: Người xem (xem + bình luận + tải tệp đính kèm, không sửa).
+ * Chia sẻ team tính theo team HIỆN TẠI của user: chuyển team là mất quyền từ team cũ; chia sẻ trực tiếp vẫn giữ.
+ */
+export type Share={id:string;reportId:string;principal:'user'|'team';principalId:string;role:'viewer';by:string;at:string};
+/** Bình luận trên báo cáo. Ai xem được báo cáo thì bình luận được. */
+export type Comment={id:string;reportId:string;userId:string;text:string;at:string;time:string};
+export type Data = {reports:Report[];contributions:Contribution[];users:User[];shares:Share[];comments:Comment[]};
 export const kindLabel = {weekly:'Báo cáo tuần',meeting:'Báo cáo cuộc họp',instant:'Báo cáo tức thời',checkin:'Báo cáo check-in'};
 export const today='2026-09-22';
 export const uid=()=>crypto.randomUUID();
@@ -59,7 +84,7 @@ export const weekGroup=(s:string)=>{const t=at(today);const monday=new Date(t.ge
 export const section=(label:string,text:string,sources:string[]=[]):Section=>({label,text,sources});
 const shortDate=(s:string)=>s.slice(8,10)+'/'+s.slice(5,7);
 export function blankReport(kind:Report['kind'],scope:Report['scope'],project='igoal'):Report{return {id:uid(),title:kind==='weekly'?'Báo cáo tuần, ngày '+shortDate(today):kind==='meeting'?'Recap iGoal Sprint 1 Meeting':kind==='checkin'?'Báo cáo check-in, ngày '+shortDate(today):'Báo cáo tức thời, ngày '+shortDate(today),kind,scope,track:'Sản phẩm',date:today,owner:'Nguyễn Việt Dũng',status:'DRAFT',relations:scope==='project'?[project]:[],sections:[],actions:[],slack:'NOT_SENT',channel:'#ikame-igoal-project',participants:'Dũng, Lục, Nguyệt, Quỳnh',audio:'',carry:['Hoàn thành','Hoàn thành','Chưa hoàn thành'],reviewed:false};}
-type SeedOpts=Partial<Pick<Report,'scope'|'track'|'owner'|'status'|'slack'|'actions'|'checkins'>>;
+type SeedOpts=Partial<Pick<Report,'scope'|'track'|'owner'|'status'|'slack'|'actions'|'checkins'|'attachments'>>;
 const seedReport=(id:string,title:string,kind:Report['kind'],date:string,relations:string[],sections:Section[],opts:SeedOpts={}):Report=>({...blankReport(kind,opts.scope??'project',relations[0]),id,title,date,relations,sections,track:'Sản phẩm',status:'PUBLISHED',reviewed:true,...opts});
 const contrib=(c:Partial<Contribution>&Pick<Contribution,'id'|'title'|'impact'|'date'|'relations'>):Contribution=>({role:'Chủ trì',owner:'Nguyễn Việt Dũng',evidence:[],collaborators:[],recordStatus:'SUBMITTED',confirmationStatus:'PENDING',confirmerId:'luc',note:'',...c});
 /** Dữ liệu mẫu trải Jul–Sep 2026, nhiều người viết, đủ 3 mảng và 4 loại báo cáo, để thấy relation nối report ↔ OKR/KR/KS/Milestone/EKS ↔ contribution. */
@@ -68,12 +93,12 @@ export function seed():Data{return {reports:[
  seedReport('kickoff','Kick-off iGoal H2/2026','meeting','2026-07-15',['igoal','o1','kr1'],[section('Mục tiêu cuộc họp','Thống nhất mục tiêu H2 của iGoal và cách chia giai đoạn.'),section('Nội dung chính','Rà soát kết quả H1: OKR tổ chức đã có, EKS và Project OKR chưa được dùng đều.\nĐề xuất tập trung 3 giai đoạn: Thiết lập – Bám sát – Đánh giá.'),section('Quyết định đã chốt','Chốt 3 giai đoạn Thiết lập – Bám sát – Đánh giá làm khung KR của H2.\nPilot với Game/App trước khi mở toàn công ty.'),section('Vấn đề còn mở','Nguồn lực Creative cho onboarding chưa xác nhận.')],{actions:[{task:'Soạn Requirement Checklist giai đoạn Thiết lập',owner:'Dũng',deadline:'2026-07-31'},{task:'Xác nhận nhân sự Creative',owner:'Quý',deadline:'2026-07-25'}]}),
  seedReport('req','Chốt Requirement Checklist giai đoạn Bám sát mục tiêu','meeting','2026-08-05',['igoal','kr2','ks1'],[section('Mục tiêu cuộc họp','Chốt danh sách tính năng P0/P1 cho giai đoạn Bám sát mục tiêu.'),section('Nội dung chính','Weekly Report, Reminder/Notification và cảnh báo mục tiêu chậm là P0.\nBáo cáo cuộc họp và Contribution Log là P1, làm sau Pilot.'),section('Quyết định đã chốt','Weekly Report có bản nháp AI là P0 của KR2.\nManager xem được báo cáo của member theo dự án.'),section('Vấn đề còn mở','Tần suất báo cáo theo loại dự án chưa chốt.')],{actions:[{task:'Hoàn thiện wireframe Weekly Report',owner:'Dũng',deadline:'2026-08-15'}]}),
  seedReport('perf','Rà soát yêu cầu giai đoạn Đánh giá hiệu suất','instant','2026-09-08',['igoal','kr3'],[section('Kết quả / cập nhật','Đã gom yêu cầu Self-assessment, Feedback 360 và Manager Review từ P&OD.'),section('Vấn đề / hỗ trợ','Cần P&OD chốt thang điểm trước 30/09.'),section('Kế hoạch tiếp theo','Dựng luồng Checkpoint evidence từ Contribution Log.')]),
- seedReport('pilot-w1','Tổng kết Pilot iGoal tuần 1','instant','2026-09-12',['igoal','kr2','ks1','pilot'],[section('Kết quả / cập nhật','Hoàn thành tuần pilot đầu tiên với 6 team. Ghi nhận 33 feedback: 14 lỗi dữ liệu (đã xử lý hết), 10 góp ý UI/UX (đã lên version mới), 9 đề xuất tính năng (đang phân loại).'),section('Vấn đề / hỗ trợ','Team UA cần mẫu báo cáo Kinh doanh riêng.'),section('Kế hoạch tiếp theo','Pilot tuần 2 tập trung Weekly Report và Reminder.')]),
+ seedReport('pilot-w1','Tổng kết Pilot iGoal tuần 1','instant','2026-09-12',['igoal','kr2','ks1','pilot'],[section('Kết quả / cập nhật','Hoàn thành tuần pilot đầu tiên với 6 team. Ghi nhận 33 feedback: 14 lỗi dữ liệu (đã xử lý hết), 10 góp ý UI/UX (đã lên version mới), 9 đề xuất tính năng (đang phân loại).'),section('Vấn đề / hỗ trợ','Team UA cần mẫu báo cáo Kinh doanh riêng.'),section('Kế hoạch tiếp theo','Pilot tuần 2 tập trung Weekly Report và Reminder.')],{attachments:[{name:'feedback-pilot-tuan-1.xlsx',size:'48 KB'}]}),
  seedReport('checkin-0915','Báo cáo check-in KS, ngày 15/09','checkin','2026-09-15',['igoal','ks1','ks2'],[section('Ghi chú thêm','Tiến độ KS1 tăng nhờ xử lý xong lỗi dữ liệu pilot.')],{checkins:[{ksId:'ks1',progress:40,result:'Xử lý 14 lỗi dữ liệu, lên version UI mới.',next:'Hoàn thiện Weekly Report có bản nháp AI.',issue:'',file:''},{ksId:'ks2',progress:10,result:'Chốt khung 3 giai đoạn, xong giai đoạn Thiết lập.',next:'Bắt đầu giai đoạn Bám sát.',issue:'Thiếu nhân sự Creative.',file:''}]}),
  seedReport('game','Làm rõ yêu cầu Module Dự án · Game/App','meeting','2026-09-17',['igoal','kr2','ks1'],[section('Mục tiêu cuộc họp','Làm rõ cách quản lý dự án và ghi nhận đóng góp của Game/App.'),section('Nội dung chính','PM cần theo dõi kế hoạch tuần trước, kết quả thực tế và kế hoạch tuần tới.\nBáo cáo dự án do 3 đầu mối PM / UA / Creative thực hiện, không bắt buộc mọi thành viên.'),section('Quyết định đã chốt','Giữ dự án xuyên H1/H2, cập nhật mục tiêu theo kỳ.\niGoal lưu biên bản chính thức; Slack nhận nội dung sau khi người dùng duyệt.'),section('Vấn đề còn mở','Thống nhất người xác nhận Contribution theo phạm vi dự án.')]),
  seedReport('creative-w38','Báo cáo tuần Creative · 15–19/09','weekly','2026-09-18',['igoal','ks2'],[section('Kết quả tuần','Hoàn thành bộ visual onboarding iGoal (12 màn) và video hướng dẫn 90 giây.'),section('Kế hoạch tuần tới','Làm banner nhắc báo cáo tuần cho Reminder.')],{owner:'Quý',track:'Creative'}),
  seedReport('ua-w38','Báo cáo tuần Kinh doanh · 15–19/09','weekly','2026-09-19',['igoal','kr2'],[section('Kết quả tuần','Onboarding 6 team Game/App lên iGoal, 4 team đã gửi báo cáo tuần đầu. MAU pilot 48%.'),section('Kế hoạch tuần tới','Onboarding tiếp 3 team UA; thu mẫu báo cáo Kinh doanh.')],{owner:'Nguyệt',track:'Kinh doanh'}),
- seedReport('sprint','Sprint Planning iGoal · Sprint 1','meeting','2026-09-21',['igoal','kr2','sprint1'],[section('Mục tiêu cuộc họp','Chốt phạm vi Sprint 1 · 21/09–02/10 và kế hoạch demo với Game/App.'),section('Nội dung chính','Ưu tiên báo cáo tuần có bản nháp AI.\nĐưa biên bản họp, quyết định và việc cần làm về iGoal.'),section('Quyết định đã chốt','Demo luồng Weekly Report và Meeting Report trong tuần đầu Sprint 1.\nContribution được ghi nhận riêng, sau khi người dùng kiểm tra nội dung.'),section('Vấn đề còn mở','Cần Game/App xác nhận mẫu báo cáo trước khi triển khai.')],{actions:[{task:'Hoàn thiện prototype Reporting để demo',owner:'Dũng',deadline:'2026-09-25'},{task:'Tổng hợp phản hồi Game/App',owner:'Nguyệt',deadline:'2026-09-28'}]}),
+ seedReport('sprint','Sprint Planning iGoal · Sprint 1','meeting','2026-09-21',['igoal','kr2','sprint1'],[section('Mục tiêu cuộc họp','Chốt phạm vi Sprint 1 · 21/09–02/10 và kế hoạch demo với Game/App.'),section('Nội dung chính','Ưu tiên báo cáo tuần có bản nháp AI.\nĐưa biên bản họp, quyết định và việc cần làm về iGoal.'),section('Quyết định đã chốt','Demo luồng Weekly Report và Meeting Report trong tuần đầu Sprint 1.\nContribution được ghi nhận riêng, sau khi người dùng kiểm tra nội dung.'),section('Vấn đề còn mở','Cần Game/App xác nhận mẫu báo cáo trước khi triển khai.')],{actions:[{task:'Hoàn thiện prototype Reporting để demo',owner:'Dũng',deadline:'2026-09-25'},{task:'Tổng hợp phản hồi Game/App',owner:'Nguyệt',deadline:'2026-09-28'}],attachments:[{name:'pham-vi-sprint-1.pdf',size:'1,2 MB'},{name:'ban-ghi-sprint-planning.m4a',size:'18 MB'}]}),
  seedReport('draft-ua','Cập nhật MAU pilot tuần 39','instant','2026-09-22',['igoal','kr2'],[section('Kết quả / cập nhật','MAU pilot đạt 52%…')],{owner:'Nguyệt',track:'Kinh doanh',status:'DRAFT'}),
  // ----- Dự án iWiki -----
  seedReport('wiki-launch','Recap Launch iWiki 4.0','meeting','2026-09-11',['iwiki','o2','ks3','wiki-launch'],[section('Mục tiêu cuộc họp','Tổng kết launch iWiki 4.0 toàn công ty.'),section('Nội dung chính','Launch đúng 11/09, 3 BU đã có không gian riêng.\nTìm kiếm và phân quyền là 2 điểm được khen.'),section('Quyết định đã chốt','Giữ nhịp cập nhật nội dung 2 tuần/lần theo BU.\nGiao Dũng theo dõi vận hành sau phát hành 4 tuần.'),section('Vấn đề còn mở','Hướng dẫn sử dụng cho nhân sự mới chưa có.')]),
@@ -84,7 +109,7 @@ export function seed():Data{return {reports:[
  // ----- Báo cáo tuần cá nhân (Dũng) -----
  seedReport('w35','Báo cáo tuần · 26/08–01/09/2026','weekly','2026-09-01',['igoal','kr2','eks1'],[section('Kết quả tuần','Hoàn thiện wireframe Weekly Report; chuẩn bị kịch bản Pilot tuần 1.'),section('Kế hoạch tuần tới','Chạy Pilot iGoal tuần 1 với 6 team.\nGom yêu cầu Đánh giá hiệu suất từ P&OD.')],{scope:'personal'}),
  seedReport('w36','Báo cáo tuần · 02–08/09/2026','weekly','2026-09-08',['igoal','iwiki','eks1','eks2','kr3'],[section('Kết quả tuần','Pilot iGoal tuần 1 bắt đầu, xử lý lỗi dữ liệu ngay trong tuần.\nRà soát yêu cầu Đánh giá hiệu suất với P&OD.'),section('Kế hoạch tuần tới','Tổng kết Pilot tuần 1.\nTheo dõi launch iWiki 4.0.')],{scope:'personal'}),
- seedReport('previous','Báo cáo tuần · 09–15/09/2026','weekly','2026-09-15',['igoal','iwiki','myikame','kr2','eks1'],[section('Kết quả tuần','Tổng kết Pilot tuần 1 (33 feedback). Chuẩn bị nội dung làm việc với Game/App. Theo dõi iWiki sau phát hành.'),section('Kế hoạch tuần tới','Chốt phạm vi Sprint 1 iGoal.\nLàm rõ yêu cầu Module Dự án với Game/App.\nHoàn thiện prototype Reporting để demo stakeholder.')],{scope:'personal'}),
+ seedReport('previous','Báo cáo tuần · 09–15/09/2026','weekly','2026-09-15',['igoal','iwiki','myikame','kr2','eks1'],[section('Kết quả tuần','Tổng kết Pilot tuần 1 (33 feedback). Chuẩn bị nội dung làm việc với Game/App. Theo dõi iWiki sau phát hành.'),section('Kế hoạch tuần tới','Chốt phạm vi Sprint 1 iGoal.\nLàm rõ yêu cầu Module Dự án với Game/App.\nHoàn thiện prototype Reporting để demo stakeholder.')],{scope:'personal',attachments:[{name:'kich-ban-demo-prototype.docx',size:'86 KB'}]}),
  // ----- Báo cáo tuần cá nhân của member khác đã tag iGoal (nguồn cho PM tổng hợp) -----
  seedReport('nguyet-w38','Báo cáo tuần · 15–19/09 · Nguyệt','weekly','2026-09-19',['igoal','kr2'],[section('Kết quả tuần này','Onboarding 6 team Game/App lên iGoal; 4 team đã gửi báo cáo tuần đầu.\nThu 12 phản hồi về mẫu báo cáo Kinh doanh.'),section('Khó khăn / vấn đề','Team UA chưa có mẫu báo cáo riêng, đang dùng tạm mẫu Sản phẩm.'),section('Kế hoạch tuần tới','Onboarding tiếp 3 team UA.\nChốt mẫu báo cáo Kinh doanh với P&OD.')],{scope:'personal',owner:'Nguyệt',track:'Kinh doanh'}),
  seedReport('quy-w38','Báo cáo tuần · 15–19/09 · Quý','weekly','2026-09-18',['igoal','ks2'],[section('Kết quả tuần này','Hoàn thành bộ visual onboarding iGoal (12 màn).\nVideo hướng dẫn 90 giây đã duyệt nội bộ.'),section('Kế hoạch tuần tới','Banner nhắc báo cáo tuần cho Reminder.')],{scope:'personal',owner:'Quý',track:'Creative'}),
@@ -95,7 +120,25 @@ export function seed():Data{return {reports:[
  contrib({id:'c-onboard',title:'Onboarding 6 team Game/App lên iGoal trong Pilot',impact:'4/6 team gửi báo cáo tuần đầu; MAU pilot 48%.',role:'Đóng góp chính',owner:'Nguyệt',date:'2026-09-19',relations:['igoal','kr2'],evidence:[{type:'Report',label:'Báo cáo tuần Kinh doanh · 15–19/09',value:'ua-w38'}],collaborators:['Dũng'],confirmationStatus:'NEED_MORE_INFO',note:'Bổ sung danh sách team đã gửi báo cáo và link recap Slack.'}),
  contrib({id:'c-visual',title:'Bộ visual onboarding iGoal và video hướng dẫn',impact:'Người dùng mới hiểu luồng báo cáo trong 2 phút; giảm câu hỏi lặp lại trên Slack.',role:'Chủ trì',owner:'Quý',date:'2026-09-18',relations:['igoal','ks2'],evidence:[{type:'Report',label:'Báo cáo tuần Creative · 15–19/09',value:'creative-w38'},{type:'File',label:'onboarding-visual-v3.fig',value:'onboarding-visual-v3.fig'}]}),
  contrib({id:'c-draft',title:'Chuẩn hóa mẫu biên bản họp cho dự án',impact:'',date:'2026-09-22',relations:['igoal','sprint1'],recordStatus:'DRAFT'}),
+ ],users:people.map(u=>({...u})),shares:[
+ // Lục (manager, không phải admin) được chia sẻ trực tiếp báo cáo tuần của Dũng và Pilot. Sprint Planning vừa trực tiếp vừa qua team BU Game → gỡ trực tiếp vẫn xem được.
+ share('sh-prev-luc','previous','user','luc','dung','2026-09-16'),
+ share('sh-pilot-luc','pilot-w1','user','luc','dung','2026-09-13'),
+ share('sh-sprint-luc','sprint','user','luc','dung','2026-09-21'),
+ share('sh-sprint-game','sprint','team','game','dung','2026-09-21'),
+ share('sh-wiki-game','wiki-launch','team','game','dung','2026-09-12'),
+ // Dũng nhận: trực tiếp từ Nguyệt, qua team Technology từ Quý.
+ share('sh-nguyet-dung','nguyet-w38','user','dung','nguyet','2026-09-19'),
+ share('sh-quy-tech','quy-w38','team','tech','quy','2026-09-18'),
+ // Nguyệt: qua team UA (mất khi chuyển team) + trực tiếp (vẫn giữ khi chuyển team).
+ share('sh-my-ua','my-kickoff','team','ua','long','2026-09-20'),
+ share('sh-prev-nguyet','previous','user','nguyet','dung','2026-09-17'),
+ ],comments:[
+ {id:'cm-1',reportId:'sprint',userId:'luc',text:'Đồng ý phạm vi Sprint 1. Cần chốt thêm ngày demo cụ thể với Game/App.',at:'2026-09-21',time:'16:20'},
+ {id:'cm-2',reportId:'sprint',userId:'dung',text:'Dự kiến demo thứ Năm 24/09, em sẽ gửi lịch.',at:'2026-09-21',time:'17:05'},
+ {id:'cm-3',reportId:'nguyet-w38',userId:'dung',text:'Mẫu báo cáo Kinh doanh chị gửi em bản nháp trước thứ Tư nhé.',at:'2026-09-20',time:'09:12'},
  ]};}
+function share(id:string,reportId:string,principal:Share['principal'],principalId:string,by:string,at:string):Share{return {id,reportId,principal,principalId,role:'viewer',by,at}}
 export const transcript=[
  {time:'00:02',speaker:'Dũng',text:'Mục tiêu hôm nay là chốt Sprint 1 và luồng báo cáo để demo Game/App trong tuần này.'},
  {time:'02:14',speaker:'Lục',text:'Dự án cần giữ xuyên H1/H2. Sang kỳ mới thì cập nhật mục tiêu, không tạo lại dự án.'},

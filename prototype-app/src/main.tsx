@@ -10,4 +10,5 @@ import './styles/type-scale.css';
 import './styles/relation-clean.css';
 import './styles/ux-clean.css';
 import './styles/polish.css';
+import './styles/sharing.css';
 createRoot(document.getElementById('root')!).render(<StoreProvider><App/></StoreProvider>);

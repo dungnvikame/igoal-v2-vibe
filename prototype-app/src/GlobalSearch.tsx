@@ -2,6 +2,7 @@ import React,{useState} from 'react';
 import {MagnifyingGlass,Flag,CalendarBlank,Clock,ChatsCircle,CheckCircle,FileText} from 'phosphor-react';
 import {projects,kindLabel,relativeDate} from './model';
 import {useStore} from './store';
+import {canView} from './sharing';
 
 type Hit={key:string;group:string;title:string;meta:string;Icon:React.ElementType;kind:string;go:()=>void};
 const KIND_ICON:Record<string,React.ElementType>={weekly:CalendarBlank,instant:Clock,meeting:ChatsCircle,checkin:Flag};
@@ -15,11 +16,11 @@ function Highlight({text,q}:{text:string;q:string}){const i=text.toLowerCase().i
  * Bàn phím: Ctrl K vào ô (App gắn ref), ↑ ↓ chọn, Enter mở, Esc xóa.
  */
 export function GlobalSearch({inputRef,openSource,openProject}:{inputRef:React.RefObject<HTMLInputElement|null>;openSource:(id:string)=>void;openProject:(id:string)=>void}){
- const {data}=useStore();const [q,setQ]=useState(''),[cursor,setCursor]=useState(0);
+ const {data,user}=useStore();const [q,setQ]=useState(''),[cursor,setCursor]=useState(0);
  const term=q.trim().toLowerCase();const has=(s:string)=>s.toLowerCase().includes(term);
  const hits:Hit[]=!term?[]:[
   ...projects.filter(p=>has(p.label)).slice(0,MAX_PER_GROUP).map(p=>({key:p.id,group:'Dự án',title:p.label,meta:'Dự án',Icon:Flag,kind:'project',go:()=>openProject(p.id)})),
-  ...data.reports.filter(r=>has(r.title)).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,MAX_PER_GROUP).map(r=>({key:r.id,group:'Báo cáo',title:r.title,meta:[kindLabel[r.kind],r.owner,relativeDate(r.date)].join(' · ')+(r.status==='DRAFT'?' · Bản nháp':''),Icon:KIND_ICON[r.kind]??FileText,kind:r.kind,go:()=>openSource(r.id)})),
+  ...data.reports.filter(r=>has(r.title)&&canView(data,r,user)).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,MAX_PER_GROUP).map(r=>({key:r.id,group:'Báo cáo',title:r.title,meta:[kindLabel[r.kind],r.owner,relativeDate(r.date)].join(' · ')+(r.status==='DRAFT'?' · Bản nháp':''),Icon:KIND_ICON[r.kind]??FileText,kind:r.kind,go:()=>openSource(r.id)})),
   ...data.contributions.filter(c=>has(c.title)).slice(0,MAX_PER_GROUP).map(c=>({key:c.id,group:'Đóng góp',title:c.title,meta:[c.owner,relativeDate(c.date)].join(' · '),Icon:CheckCircle,kind:'contribution',go:()=>openSource(c.id)})),
  ];
  const pick=(h?:Hit)=>{if(!h)return;h.go();setQ('');setCursor(0);inputRef.current?.blur()};

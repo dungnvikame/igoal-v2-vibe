@@ -2,6 +2,7 @@ import React,{useContext,useState} from 'react';
 import {Plus,ChatsCircle,Funnel,CalendarBlank,Clock,Flag,FileText,CheckCircle,MagnifyingGlass,CaretRight,PencilSimple} from 'phosphor-react';
 import {Report,Relation,kindLabel,dateLabel,relativeDate,weekGroup,entities,entityCode,entityText} from './model';
 import {useStore,RelatedContext,ActiveRelatedContext} from './store';
+import {accessOf} from './sharing';
 import {relatedCount} from './Related';
 import {Button,Badge,Empty,Relations,ProgressBar,onActivate} from './ui';
 
@@ -19,7 +20,7 @@ export function OkrCard({title,objectives,children,onCheckin}:{title:string;obje
  </section>;
 }
 
-const KIND_ICON={weekly:CalendarBlank,instant:Clock,meeting:ChatsCircle,checkin:Flag} as const;
+export const KIND_ICON={weekly:CalendarBlank,instant:Clock,meeting:ChatsCircle,checkin:Flag} as const;
 
 /**
  * "Tổng hợp báo cáo": danh sách kiểu list (bộ lọc luôn hiện, tìm kiếm, badge Nháp / Đã gửi rõ ràng).
@@ -36,7 +37,9 @@ export function ReportHub({reports,create,edit,open,views=[],context}:{reports:R
  const active=views.find(v=>v.key===view);
  // Chia nhóm theo tuần để quét nhanh: báo cáo tuần này nằm trên cùng, cũ hơn gom vào 'Trước đó'.
  const groups=[...list.reduce((m,r)=>{const g=weekGroup(r.date);m.set(g,[...(m.get(g)??[]),r]);return m},new Map<string,Report[]>())];
- const openRow=(r:Report)=>r.status==='DRAFT'?edit(r):open(r);
+ const {data,user}=useStore();
+ // Chỉ người viết mới soạn tiếp bản nháp; người có quyền xem luôn mở chi tiết (chỉ xem + bình luận).
+ const openRow=(r:Report)=>r.status==='DRAFT'&&accessOf(data,r,user).level==='owner'?edit(r):open(r);
  return <section className="surface report-hub"><header className="card-head"><div className="row"><h3>Tổng hợp báo cáo</h3>{views.length>0&&<div className="inner-tabs compact"><button className={view==='reports'?'active':''} onClick={()=>setView('reports')}>Báo cáo</button>{views.map(v=><button key={v.key} className={view===v.key?'active':''} onClick={()=>setView(v.key)}>{v.label}</button>)}</div>}</div><div className="head-actions">{view==='reports'&&<Button onClick={()=>setFilterOpen(!filterOpen)} className={filterOpen||activeCount?'active-filter':''}><Funnel/> Lọc{activeCount>0&&<span className="count-pill neutral">{activeCount}</span>}</Button>}<Button primary onClick={create}><Plus/> Tạo báo cáo mới</Button></div></header>
   {active?<div className="hub-view">{active.render()}</div>:<>
   <div className="list-toolbar">{filterOpen?<div className="hub-selects"><label>Trạng thái<select value={status} onChange={e=>setStatus(e.target.value)}><option value="all">Tất cả</option><option value="draft">Bản nháp</option><option value="published">Đã gửi</option></select></label><label>Loại báo cáo<select value={kind} onChange={e=>setKind(e.target.value)}><option value="all">Tất cả</option>{(Object.keys(kindLabel) as Report['kind'][]).map(k=><option key={k} value={k}>{kindLabel[k]}</option>)}</select></label>{!context&&<label>Dự án<select value={project} onChange={e=>setProject(e.target.value)}><option value="all">Tất cả</option>{projectOptions.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</select></label>}{activeCount>0&&<button className="text-button" onClick={clearFilters}>Xóa lọc</button>}</div>:<span className="hint">{list.length} báo cáo{activeCount>0&&' · đang lọc'}</span>}<div className="search-input compact"><MagnifyingGlass/><input aria-label="Tìm báo cáo" placeholder="Tìm báo cáo…" value={q} onChange={e=>setQ(e.target.value)}/></div></div>
