@@ -32,7 +32,7 @@ export function Relations({ids,max=3,hide=[],compact=false}:{ids:string[];max?:n
  const list=ids.filter(id=>!hide.includes(id)).map(id=>entities.find(e=>e.id===id)).filter((e):e is NonNullable<typeof e>=>!!e);
  if(!list.length)return null;
  const shown=all?list:list.slice(0,max);const rest=list.length-shown.length;
- const tag=(e:typeof list[number])=>['KR','KS'].includes(e.type)?codeOf(e):['Project','Milestone'].includes(e.type)?nameOf(e).split(' · ')[0]:codeOf(e);
+ const tag=(e:typeof list[number])=>['KR','KS','EKSKS'].includes(e.type)?codeOf(e):['Project','Milestone'].includes(e.type)?nameOf(e).split(' · ')[0]:codeOf(e);
  const act=(e:typeof list[number])=>openRelated?{role:'button' as const,tabIndex:0,'aria-label':'Lịch sử '+e.label,onClick:(ev:React.MouseEvent)=>{ev.stopPropagation();openRelated(e.id)},onKeyDown:onActivate(()=>openRelated(e.id))}:{};
  if(compact)return <span className="rel-inline">{shown.map((e,i)=><React.Fragment key={e.id}>{i>0&&<i>·</i>}<span className={openRelated?'link':''} title={e.label} {...act(e)}>{tag(e)}</span></React.Fragment>)}{rest>0&&<><i>·</i><span className="link" role="button" tabIndex={0} aria-label={`Xem thêm ${rest} liên kết`} onClick={ev=>{ev.stopPropagation();setAll(true)}} onKeyDown={onActivate(()=>setAll(true))}>+{rest}</span></>}</span>;
  return <div className="rp-chips readonly">{shown.map(e=><span className={'rp-chip'+(openRelated?' link':'')} key={e.id} title={e.label} {...act(e)}><b>{codeOf(e)}</b><span>{nameOf(e)}</span></span>)}{rest>0&&<button type="button" className="rp-chip more" onClick={()=>setAll(true)}>+{rest}</button>}</div>;

@@ -108,9 +108,9 @@ export default function App(){
     {storageError&&<div className="notice warning">Trình duyệt không lưu được dữ liệu. Hãy giữ trang mở để tránh mất thay đổi.</div>}
     {!me?.active?<section className="surface"><div className="empty"><LockSimple size={32}/><h3>Tài khoản đã ngừng hoạt động</h3><p>Tài khoản {me?.name} không còn quyền truy cập báo cáo nào. Đổi vai trò trong Thiết lập demo để tiếp tục.</p><Button onClick={()=>setSettings(true)}>Thiết lập demo</Button></div></section>
     :page==='shared'?<SharedWithMe open={show}/>
-    :page==='project'?(projectId?<Project key={projectId} projectId={projectId} create={()=>setCreate(true)} edit={edit} open={show} source={setSource}/>:<ProjectList open={id=>go('project',id)}/>)
+    :page==='project'?(projectId?<Project key={projectId} projectId={projectId} create={()=>setCreate(true)} edit={edit} open={show} source={setSource} notify={notify}/>:<ProjectList open={id=>go("project",id)} notify={notify}/>)
      :<><div className="project-tabs">{(['Mục tiêu & báo cáo','Contribution Log','Góp ý','Lịch sử thay đổi'] as EksTab[]).map(t=><button key={t} className={eksTab===t?'active':''} onClick={()=>setEksTab(t)}>{t==='Contribution Log'&&me?.canConfirm?'Xác nhận đóng góp':t}</button>)}</div>
-      {eksTab==='Mục tiêu & báo cáo'?<MyEks user={user} create={()=>setCreate(true)} edit={edit} open={show} source={setSource}/>
+      {eksTab==='Mục tiêu & báo cáo'?<MyEks user={user} create={()=>setCreate(true)} edit={edit} open={show} source={setSource} notify={notify}/>
       :eksTab==='Contribution Log'?<ContributionList user={user} edit={setContribution} source={setSource}/>
       :<section className="surface document"><h2>{eksTab}</h2><p className="hint">Màn hình của iGoal hiện tại, không thuộc phạm vi prototype.</p></section>}</>}
    </div>{related&&<aside className="page-panel"><GoalHistory key={related} id={related} close={()=>setRelated(null)} open={setSource}/></aside>}</div></ActiveRelatedContext.Provider>

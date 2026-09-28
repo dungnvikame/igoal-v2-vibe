@@ -15,15 +15,15 @@ Cập nhật: 28/09/2026 · Prototype: `prototype-app/src/Alignment.tsx`
 | C. AI tự suy luận EKS → KR team | Không cần thao tác | Khó giải thích, không kiểm soát được |
 
 ## Rule (prototype)
-1. Liên kết EKS → mục tiêu team thiết lập ở **My EKS**, ngay dưới mỗi EKS ("Đóng góp cho mục tiêu team" → chọn KR). Chỉ chọn ở cấp KR, không chọn Objective.
+1. Liên kết gắn ở **cấp KS**, trong bước 3 "Liên kết OKR team" của luồng tạo EKS (Thông tin → Trọng số → Liên kết OKR team) hoặc tab thứ 3 khi sửa EKS (`EksForm.tsx`). Mỗi KS chọn 0..n KR team; không bắt buộc. EKS đóng góp = hợp các KS. Card My EKS hiện "Đóng góp OKR team: KR…" dưới từng KS.
 2. Báo cáo cá nhân chỉ gắn được: **EKS cá nhân** và **mục tiêu dự án** (Dự án / Objective / KR / KS). Không gắn Mốc, không gắn thẳng OKR team.
-3. Editor báo cáo tuần hiển thị dòng **"Đóng góp cho"**: mỗi EKS đang gắn → các KR team nó đóng góp (chỉ đọc).
+3. Editor báo cáo tuần: dưới chip Liên kết có MỘT dòng chữ "Đóng góp vào OKR team X: KR1 · KR2" (gộp trùng các EKS, hover mã KR để xem tên + EKS đóng góp). Không lặp lại chip EKS. Gợi ý liên kết cũng tách thành dòng chữ nhỏ riêng.
 4. Popover Liên kết hiện gợi ý dưới mỗi EKS: "→ KR1, KR3 · Team Technology".
 
-Dữ liệu: `Data.alignments: Record<eksId, teamGoalId[]>`, Team OKR mock ở `teamGoals` (`model.ts`).
+Dữ liệu: `Data.eks` (EKS + KS, đồng bộ vào `entities` qua `syncEks`), `Data.alignments: Record<ksId, teamGoalId[]>`, Team OKR mock ở `teamGoals` (`model.ts`).
 
 ## Phase tiếp theo (module Thiết lập & liên kết mục tiêu)
-- Liên kết EKS → OKR team nên nằm trong luồng **tạo / sửa EKS** (bắt buộc hoặc khuyến nghị chọn KR team khi tạo EKS), không chỉ trên card My EKS.
+- (Đã làm ở prototype) Liên kết nằm trong luồng tạo / sửa EKS. Cân nhắc bắt buộc với EKS loại Team / Công ty.
 - Quản lý duyệt liên kết khi duyệt EKS đầu kỳ.
 - Trang Team OKR hiển thị ngược: mỗi KR team ← các EKS đóng góp ← báo cáo tuần gắn các EKS đó.
 - Cân nhắc trọng số đóng góp (EKS đóng góp bao nhiêu % vào KR team).

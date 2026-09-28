@@ -1,4 +1,6 @@
-export type Relation = {id:string;type:string;label:string;project:string;progress?:number};
+import type {ProjectConfig} from './project-config';
+/** `parent` = EKS cha của một Key Success cá nhân (type 'EKSKS'). */
+export type Relation = {id:string;type:string;label:string;project:string;progress?:number;parent?:string};
 export const entities:Relation[] = [
  {id:'igoal',type:'Project',label:'iGoal',project:'igoal'}, {id:'iwiki',type:'Project',label:'iWiki',project:'iwiki'}, {id:'myikame',type:'Project',label:'My iKame',project:'myikame'},
  // iGoal
@@ -10,17 +12,44 @@ export const entities:Relation[] = [
  {id:'ks2',type:'KS',label:'KS2 · Xây dựng iGoal theo 3 giai đoạn Thiết lập – Bám sát – Đánh giá',project:'igoal',progress:10},
  {id:'pilot',type:'Milestone',label:'Pilot tuần 1 · 08–12/09',project:'igoal'},
  {id:'sprint1',type:'Milestone',label:'Sprint 1 · 21/09–02/10',project:'igoal'},
- {id:'eks1',type:'EKS',label:'Hoàn thiện prototype Reporting để demo stakeholder',project:'igoal',progress:45},
  // iWiki
  {id:'o2',type:'Objective',label:'Xây dựng iWiki trở thành nền tảng tri thức chính thống, được tin dùng',project:'iwiki',progress:55},
  {id:'ks3',type:'KS',label:'KS1 · Launch iWiki 4.0 toàn công ty trong tháng 08/2026',project:'iwiki',progress:80},
  {id:'wiki-launch',type:'Milestone',label:'Launch iWiki 4.0 · 11/09',project:'iwiki'},
- {id:'eks2',type:'EKS',label:'Theo dõi vận hành iWiki sau phát hành',project:'iwiki',progress:60},
  // My iKame
  {id:'o3',type:'Objective',label:'Đưa My iKame thành cổng thông tin nhân sự dùng hàng ngày',project:'myikame'},
  {id:'ks4',type:'KS',label:'KS1 · Launch và vận hành My iKame toàn công ty trước 30/09; WAU ≥ 80%',project:'myikame'},
 ];
 export const projects = entities.filter(e=>e.type==='Project');
+// ---------- EKS cá nhân (tạo / sửa được) ----------
+/** Loại phát triển của EKS, đúng 3 lựa chọn trên iGoal. */
+export const devTypes=[{id:'TEAM',label:'Team'},{id:'COMPANY',label:'Công ty'},{id:'SELF',label:'Bản thân'}] as const;
+export type DevType=typeof devTypes[number]['id'];
+export const metrics=[{id:'PERCENT',label:'Phần trăm'},{id:'NUMBER',label:'Số lượng'},{id:'BOOL',label:'Có-Không'}] as const;
+export type Metric=typeof metrics[number]['id'];
+export type EksKs={id:string;title:string;metric:Metric;weight:number;progress:number};
+/** `project` (tùy chọn) = dự án EKS phục vụ; dùng để bản báo cáo ở dự án giữ được liên kết EKS. */
+export type Eks={id:string;title:string;devType:DevType;description:string;project?:string;ks:EksKs[]};
+/** Tiến độ EKS = trung bình KS theo trọng số. */
+export const eksProgress=(e:Eks)=>{const w=e.ks.reduce((n,k)=>n+k.weight,0);return w?Math.round(e.ks.reduce((n,k)=>n+k.weight*k.progress,0)/w):0};
+/**
+ * EKS nằm trong `Data.eks` (tạo/sửa được) nhưng mọi màn đọc liên kết qua `entities`.
+ * Đồng bộ lại EKS (type 'EKS') + KS của EKS (type 'EKSKS', `parent` = EKS) vào `entities` mỗi khi dữ liệu đổi. Idempotent.
+ */
+export function syncEks(list:Eks[]){
+ for(let i=entities.length-1;i>=0;i--)if(entities[i].type==='EKS'||entities[i].type==='EKSKS')entities.splice(i,1);
+ for(const e of list){entities.push({id:e.id,type:'EKS',label:e.title,project:e.project??'',progress:eksProgress(e)});e.ks.forEach((k,i)=>entities.push({id:k.id,type:'EKSKS',label:`KS${i+1} · ${k.title}`,project:'',parent:e.id,progress:k.progress}))}
+}
+const seedEks=():Eks[]=>[
+ {id:'eks1',title:'Hoàn thiện prototype Reporting để demo stakeholder',devType:'TEAM',description:'',project:'igoal',ks:[
+  {id:'eks1-ks1',title:'Demo luồng Weekly Report và Meeting Report cho Game/App trước 25/09',metric:'PERCENT',weight:40,progress:60},
+  {id:'eks1-ks2',title:'Thu ≥ 20 phản hồi stakeholder và chốt backlog Sprint 2',metric:'NUMBER',weight:30,progress:30},
+  {id:'eks1-ks3',title:'Bàn giao spec có acceptance criteria đầy đủ cho team dev',metric:'PERCENT',weight:30,progress:40}]},
+ {id:'eks2',title:'Theo dõi vận hành iWiki sau phát hành',devType:'COMPANY',description:'',project:'iwiki',ks:[
+  {id:'eks2-ks1',title:'Không có sự cố nghiêm trọng trong 4 tuần sau launch',metric:'BOOL',weight:60,progress:80},
+  {id:'eks2-ks2',title:'Bổ sung hướng dẫn sử dụng iWiki cho nhân sự mới',metric:'PERCENT',weight:40,progress:40}]},
+];
+syncEks(seedEks());
 /** Meta hiển thị trên card dự án (bám trang danh sách Dự án của iGoal). */
 export const projectMeta:Record<string,{owner:string;unit:string;team:string;tags:string[];description:string}>={
  igoal:{owner:'Nguyễn Việt Dũng',unit:'Technology',team:'Technology',tags:['Công nghệ','Sản phẩm riêng'],description:'Nền tảng quản trị mục tiêu và ghi nhận kết quả công việc'},
@@ -73,6 +102,14 @@ export const people:User[]=[
  {id:'nguyet',name:'Nguyệt',role:'UA Lead',team:'ua',active:true,canConfirm:false},
  {id:'quy',name:'Quý',role:'Creative Lead',team:'creative',active:true,canConfirm:false},
  {id:'quynh',name:'Quỳnh',role:'Vận hành',team:'tech',active:true,canConfirm:false},
+// Nhân sự thêm để ô tìm thành viên theo vai trò (Tạo dự án) có dữ liệu thật hơn.
+ {id:'hung',name:'Trần Quang Hưng',role:'Product Manager',team:'game',active:true,canConfirm:false},
+ {id:'linh',name:'Phạm Thùy Linh',role:'Product Designer',team:'tech',active:true,canConfirm:false},
+ {id:'trung',name:'Lê Đức Trung',role:'Developer',team:'tech',active:true,canConfirm:false},
+ {id:'phu',name:'Ngô Minh Phú',role:'Developer',team:'game',active:true,canConfirm:false},
+ {id:'ha',name:'Đỗ Thu Hà',role:'UA Specialist',team:'ua',active:true,canConfirm:false},
+ {id:'minh',name:'Vũ Nhật Minh',role:'QA Engineer',team:'tech',active:true,canConfirm:false},
+ {id:'an',name:'Bùi Hoài An',role:'Creative Artist',team:'creative',active:true,canConfirm:false},
 ];
 /** ADMIN theo entity (dự án hoặc team). Admin của entity chứa báo cáo được xem + chia sẻ báo cáo đó. Manager không tự có quyền này. */
 export const entityAdmins:Record<string,string[]>={igoal:['dung'],iwiki:['dung'],myikame:['long'],tech:['long']};
@@ -100,8 +137,9 @@ export type DestKind='eks'|'project'|'manager'|'slack';
 export type Destination={id:string;kind:DestKind;label:string;hint:string;group:'Cá nhân'|'Dự án'|'Kênh Slack';projectId?:string;channel?:string;userId?:string};
 /** Kết quả gửi tới một nơi. `reportId` = bản báo cáo tại nơi đó (Slack không có, nội dung lưu ở `sections`). */
 export type Publication={id:string;originId:string;destId:string;kind:DestKind;label:string;reportId?:string;status:'SENT'|'FAILED';at:string;time:string;customized:boolean;sections?:Section[];title?:string};
-/** `alignments[eksId]` = id các mục tiêu team (TeamGoal) mà EKS đóng góp vào, thiết lập ở My EKS. */
-export type Data = {reports:Report[];contributions:Contribution[];users:User[];shares:Share[];comments:Comment[];publications:Publication[];alignments:Record<string,string[]>};
+/** `eks` = EKS cá nhân của user. `alignments[ksId]` = id KR team (TeamGoal) mà KS đó đóng góp, gắn ở bước 3 luồng tạo / sửa EKS. */
+/** `projects` = cấu hình dự án (luồng Tạo dự án, project-config.ts); seed ở store. */
+export type Data = {projects:ProjectConfig[];reports:Report[];contributions:Contribution[];users:User[];shares:Share[];comments:Comment[];publications:Publication[];eks:Eks[];alignments:Record<string,string[]>};
 export const kindLabel = {weekly:'Báo cáo tuần',meeting:'Báo cáo cuộc họp',instant:'Báo cáo tức thời',checkin:'Báo cáo check-in'};
 export const today='2026-09-22';
 export const uid=()=>crypto.randomUUID();
@@ -120,7 +158,7 @@ type SeedOpts=Partial<Pick<Report,'scope'|'track'|'owner'|'status'|'slack'|'acti
 const seedReport=(id:string,title:string,kind:Report['kind'],date:string,relations:string[],sections:Section[],opts:SeedOpts={}):Report=>({...blankReport(kind,opts.scope??'project',relations[0]),id,title,date,relations,sections,track:'Sản phẩm',status:'PUBLISHED',reviewed:true,...opts});
 const contrib=(c:Partial<Contribution>&Pick<Contribution,'id'|'title'|'impact'|'date'|'relations'>):Contribution=>({role:'Chủ trì',owner:'Nguyễn Việt Dũng',evidence:[],collaborators:[],recordStatus:'SUBMITTED',confirmationStatus:'PENDING',confirmerId:'luc',note:'',...c});
 /** Dữ liệu mẫu trải Jul–Sep 2026, nhiều người viết, đủ 3 mảng và 4 loại báo cáo, để thấy relation nối report ↔ OKR/KR/KS/Milestone/EKS ↔ contribution. */
-export function seed():Data{return {reports:[
+export function seed():Omit<Data,"projects">{return {reports:[
  // ----- Dự án iGoal -----
  seedReport('kickoff','Kick-off iGoal H2/2026','meeting','2026-07-15',['igoal','o1','kr1'],[section('Mục tiêu cuộc họp','Thống nhất mục tiêu H2 của iGoal và cách chia giai đoạn.'),section('Nội dung chính','Rà soát kết quả H1: OKR tổ chức đã có, EKS và Project OKR chưa được dùng đều.\nĐề xuất tập trung 3 giai đoạn: Thiết lập – Bám sát – Đánh giá.'),section('Quyết định đã chốt','Chốt 3 giai đoạn Thiết lập – Bám sát – Đánh giá làm khung KR của H2.\nPilot với Game/App trước khi mở toàn công ty.'),section('Vấn đề còn mở','Nguồn lực Creative cho onboarding chưa xác nhận.')],{actions:[{task:'Soạn Requirement Checklist giai đoạn Thiết lập',owner:'Dũng',deadline:'2026-07-31'},{task:'Xác nhận nhân sự Creative',owner:'Quý',deadline:'2026-07-25'}]}),
  seedReport('req','Chốt Requirement Checklist giai đoạn Bám sát mục tiêu','meeting','2026-08-05',['igoal','kr2','ks1'],[section('Mục tiêu cuộc họp','Chốt danh sách tính năng P0/P1 cho giai đoạn Bám sát mục tiêu.'),section('Nội dung chính','Weekly Report, Reminder/Notification và cảnh báo mục tiêu chậm là P0.\nBáo cáo cuộc họp và Contribution Log là P1, làm sau Pilot.'),section('Quyết định đã chốt','Weekly Report có bản nháp AI là P0 của KR2.\nManager xem được báo cáo của member theo dự án.'),section('Vấn đề còn mở','Tần suất báo cáo theo loại dự án chưa chốt.')],{actions:[{task:'Hoàn thiện wireframe Weekly Report',owner:'Dũng',deadline:'2026-08-15'}]}),
@@ -152,7 +190,7 @@ export function seed():Data{return {reports:[
  contrib({id:'c-onboard',title:'Onboarding 6 team Game/App lên iGoal trong Pilot',impact:'4/6 team gửi báo cáo tuần đầu; MAU pilot 48%.',role:'Đóng góp chính',owner:'Nguyệt',date:'2026-09-19',relations:['igoal','kr2'],evidence:[{type:'Report',label:'Báo cáo tuần Kinh doanh · 15–19/09',value:'ua-w38'}],collaborators:['Dũng'],confirmationStatus:'NEED_MORE_INFO',note:'Bổ sung danh sách team đã gửi báo cáo và link recap Slack.'}),
  contrib({id:'c-visual',title:'Bộ visual onboarding iGoal và video hướng dẫn',impact:'Người dùng mới hiểu luồng báo cáo trong 2 phút; giảm câu hỏi lặp lại trên Slack.',role:'Chủ trì',owner:'Quý',date:'2026-09-18',relations:['igoal','ks2'],evidence:[{type:'Report',label:'Báo cáo tuần Creative · 15–19/09',value:'creative-w38'},{type:'File',label:'onboarding-visual-v3.fig',value:'onboarding-visual-v3.fig'}]}),
  contrib({id:'c-draft',title:'Chuẩn hóa mẫu biên bản họp cho dự án',impact:'',date:'2026-09-22',relations:['igoal','sprint1'],recordStatus:'DRAFT'}),
- ],users:people.map(u=>({...u})),publications:[],alignments:{eks1:['tkr1','tkr3'],eks2:['tkr2']},shares:[
+ ],users:people.map(u=>({...u})),publications:[],eks:seedEks(),alignments:{'eks1-ks1':['tkr1'],'eks1-ks2':['tkr3'],'eks1-ks3':['tkr1'],'eks2-ks1':['tkr2']},shares:[
  // Lục (manager, không phải admin) được chia sẻ trực tiếp báo cáo tuần của Dũng và Pilot. Sprint Planning vừa trực tiếp vừa qua team BU Game → gỡ trực tiếp vẫn xem được.
  share('sh-prev-luc','previous','user','luc','dung','2026-09-16'),
  share('sh-pilot-luc','pilot-w1','user','luc','dung','2026-09-13'),
@@ -186,8 +224,8 @@ export const projectCadence={phase:'Global Launch',every:'1 tuần/lần',next:'
 /** Báo cáo tuần cá nhân đã gửi gần nhất, dùng làm nguồn carry-over. */
 /** Báo cáo tuần đã gửi gần nhất cùng ngữ cảnh: cùng người viết (cá nhân) hoặc cùng dự án (PM). */
 export const previousWeekly=(reports:Report[],exceptId?:string,scope:Report['scope']='personal',projectId?:string,owner?:string)=>reports.filter(r=>r.kind==='weekly'&&r.scope===scope&&r.status==='PUBLISHED'&&(!projectId||r.relations.includes(projectId))&&(!owner||r.owner===owner)&&r.id!==exceptId).sort((a,b)=>b.date.localeCompare(a.date))[0];
-/** Từng dòng trong "Kế hoạch tuần tới" của báo cáo trước trở thành một item carry-over. */
-export const carryItems=(prev?:Report)=>prev?.sections.filter(s=>s.label==='Kế hoạch tuần tới').flatMap(s=>s.text.split('\n')).map(t=>t.trim()).filter(Boolean)??[];
+/** Từng dòng trong "Kế hoạch tuần tới" của báo cáo trước (cả trong khung dự án). */
+export const carryItems=(prev?:Report)=>prev?.sections.filter(s=>s.label==="Kế hoạch tuần tới").flatMap(s=>s.text.split('\n')).map(t=>t.trim()).filter(Boolean)??[];
 /** Mở lại nháp tuần hiện tại nếu đã có, tránh tạo trùng khi bấm "Viết báo cáo tuần này" nhiều lần. */
 export const currentWeekly=(reports:Report[])=>reports.find(r=>r.kind==='weekly'&&r.scope==='personal'&&r.status==='DRAFT')||blankReport('weekly','personal');
 /** Ngữ cảnh gợi ý: báo cáo tuần cá nhân (nguồn = báo cáo dự án) hay báo cáo tuần dự án do PM viết (nguồn = báo cáo tuần của member + check-in). */

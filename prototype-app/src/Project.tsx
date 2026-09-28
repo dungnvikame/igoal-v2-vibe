@@ -1,21 +1,23 @@
 import React,{useState} from 'react';
-import {FileText,Sparkle,Target,MagnifyingGlass,CaretDown,CaretRight,ChatsCircle,Lightbulb,Flag,CheckCircle} from 'phosphor-react';
+import {FileText,Sparkle,Target,MagnifyingGlass,CaretDown,CaretRight,ChatsCircle,Lightbulb,Flag,CheckCircle,Plus} from 'phosphor-react';
 import {Report,Contribution,blankContribution,blankReport,kindLabel,section,entities,projects,projectMeta,projectCadence,dateLabel,relativeDate,daysAgo,today,tracks,Track} from './model';
 import {useStore} from './store';
 import {canView} from './sharing';
 import {Button,Badge,Relations,Empty,Modal,AIBox,ProgressBar} from './ui';
 import {OkrCard,ReportHub} from './ReportHub';
+import {ProjectForm,ProjectStrip,ProjectSettings} from './ProjectForm';
 
 /** Trang danh sách Dự án bám iGoal thật: tìm kiếm, lọc Đơn vị/Team, grid card dự án. Bấm card mới vào chi tiết. */
-export function ProjectList({open}:{open:(id:string)=>void}){
+export function ProjectList({open,notify}:{open:(id:string)=>void;notify:(s:string)=>void}){
  const {data}=useStore();
- const [q,setQ]=useState(''),[unit,setUnit]=useState('all'),[team,setTeam]=useState('all');
+ const [q,setQ]=useState(''),[unit,setUnit]=useState('all'),[team,setTeam]=useState('all'),[creating,setCreating]=useState(false);
  const units=[...new Set(Object.values(projectMeta).map(m=>m.unit))],teams=[...new Set(Object.values(projectMeta).map(m=>m.team))];
  const list=projects.filter(p=>{const m=projectMeta[p.id];return p.label.toLowerCase().includes(q.toLowerCase())&&(unit==='all'||m.unit===unit)&&(team==='all'||m.team===team)});
  const filtered=unit!=='all'||team!=='all'||!!q.trim();
  return <>
   <div className="project-toolbar"><div className="search-input compact"><MagnifyingGlass/><input aria-label="Tìm kiếm dự án" placeholder="Tìm kiếm dự án" value={q} onChange={e=>setQ(e.target.value)}/></div>
-   <div className="hub-selects"><select className="meta-input" aria-label="Đơn vị" value={unit} onChange={e=>setUnit(e.target.value)}><option value="all">Tất cả đơn vị</option>{units.map(u=><option key={u}>{u}</option>)}</select><select className="meta-input" aria-label="Team" value={team} onChange={e=>setTeam(e.target.value)}><option value="all">Tất cả team</option>{teams.map(t=><option key={t}>{t}</option>)}</select>{filtered&&<button className="text-button" onClick={()=>{setQ('');setUnit('all');setTeam('all')}}>Xóa lọc</button>}</div></div>
+   <div className="hub-selects"><select className="meta-input" aria-label="Đơn vị" value={unit} onChange={e=>setUnit(e.target.value)}><option value="all">Tất cả đơn vị</option>{units.map(u=><option key={u}>{u}</option>)}</select><select className="meta-input" aria-label="Team" value={team} onChange={e=>setTeam(e.target.value)}><option value="all">Tất cả team</option>{teams.map(t=><option key={t}>{t}</option>)}</select>{filtered&&<button className="text-button" onClick={()=>{setQ('');setUnit('all');setTeam('all')}}>Xóa lọc</button>}<Button primary onClick={()=>setCreating(true)}><Plus/> Tạo dự án</Button></div></div>
+  {creating&&<ProjectForm close={()=>setCreating(false)} done={id=>{setCreating(false);open(id)}} notify={notify}/>}
   {list.length?<div className="project-grid">{list.map(p=>{const m=projectMeta[p.id];const o=entities.find(e=>e.type==='Objective'&&e.project===p.id);
    // Hoạt động gần nhất: báo cáo dự án đã gửi mới nhất, để biết dự án có đang được cập nhật không.
    const reps=data.reports.filter(r=>r.scope==='project'&&r.status==='PUBLISHED'&&r.relations.includes(p.id)).sort((a,b)=>b.date.localeCompare(a.date));
@@ -29,18 +31,21 @@ export function ProjectList({open}:{open:(id:string)=>void}){
 }
 
 /** Chi tiết dự án: tabs iGoal thật, card OKR dự án, card Tổng hợp báo cáo (kèm chế độ xem Nhật ký từ Relation layer). */
-export function Project({projectId,create,edit,open,source}:{projectId:string;create:()=>void;edit:(r:Report)=>void;open:(r:Report)=>void;source:(id:string)=>void}){
+export function Project({projectId,create,edit,open,source,notify}:{projectId:string;create:()=>void;edit:(r:Report)=>void;open:(r:Report)=>void;source:(id:string)=>void;notify:(s:string)=>void}){
  const {data,user}=useStore();const [tab,setTab]=useState('Mục tiêu & báo cáo');const p=projects.find(x=>x.id===projectId)!;
+ const cfg=data.projects?.find(x=>x.id===projectId);const [editing,setEditing]=useState(false);
  const objectives=entities.filter(e=>e.type==='Objective'&&e.project===projectId);
  // Chỉ báo cáo user có quyền xem (thành viên / quản trị dự án, người viết, hoặc được chia sẻ).
  const reports=data.reports.filter(r=>r.scope==='project'&&r.relations.includes(projectId)&&canView(data,r,user));
- return <><div className="project-tabs">{['Mục tiêu & báo cáo','Tài liệu','Quản lý dự án','Góp ý','Lịch sử chỉnh sửa'].map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t}</button>)}</div>
+ return <>{cfg&&<ProjectStrip cfg={cfg}/>}<div className="project-tabs">{['Mục tiêu & báo cáo','Tài liệu','Quản lý dự án','Góp ý','Lịch sử chỉnh sửa'].map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t}</button>)}</div>
   {tab==='Mục tiêu & báo cáo'?<div className="stack wide-gap">
    <OkrCard title={p.label+' OKR'} objectives={objectives} children={o=>entities.filter(e=>['KR','KS'].includes(e.type)&&e.project===o.project)} onCheckin={()=>edit(blankReport('checkin','project',projectId))}/>
    
    <ReportHub reports={reports} create={create} edit={edit} open={open} context={projectId} views={[{key:'timeline',label:'Nhật ký',render:()=><Timeline source={source} projectId={projectId}/>}]}/>
   </div>
-  :<section className="surface document"><h2>{tab}</h2>{tab==='Tài liệu'?<><p>Tài liệu tham khảo của dự án trong bản demo.</p><Button onClick={()=>source('game')}><FileText/> Yêu cầu báo cáo từ Game/App ↗</Button><Button onClick={()=>source('sprint')}><FileText/> Phạm vi Sprint 1 ↗</Button></>:tab==='Quản lý dự án'?<><h3>Nhóm dự án</h3><p>Dũng · Product Manager<br/>Nguyệt · Phối hợp Game/App<br/>Quỳnh · Phối hợp vận hành</p><Relations ids={[projectId,'sprint1']}/></>:tab==='Góp ý'?<><h3>Nội dung cần stakeholder phản hồi</h3><p>Mẫu báo cáo phù hợp với Game/App; người xác nhận Contribution; nội dung recap gửi Slack.</p><Button onClick={()=>source('game')}>Xem cuộc họp làm rõ yêu cầu ↗</Button></>:<><p>21/09/2026 · Chốt phạm vi Sprint 1.</p><p>17/09/2026 · Bổ sung yêu cầu từ Game/App.</p></>}</section>}</>;
+  :tab==="Quản lý dự án"&&cfg?<ProjectSettings cfg={cfg} edit={()=>setEditing(true)}/>
+  :<section className="surface document"><h2>{tab}</h2>{tab==="Tài liệu"?<><p>Tài liệu tham khảo của dự án trong bản demo.</p><Button onClick={()=>source('game')}><FileText/> Yêu cầu báo cáo từ Game/App ↗</Button><Button onClick={()=>source('sprint')}><FileText/> Phạm vi Sprint 1 ↗</Button></>:tab==='Quản lý dự án'?<><h3>Nhóm dự án</h3><p>Dũng · Product Manager<br/>Nguyệt · Phối hợp Game/App<br/>Quỳnh · Phối hợp vận hành</p><Relations ids={[projectId,'sprint1']}/></>:tab==='Góp ý'?<><h3>Nội dung cần stakeholder phản hồi</h3><p>Mẫu báo cáo phù hợp với Game/App; người xác nhận Contribution; nội dung recap gửi Slack.</p><Button onClick={()=>source('game')}>Xem cuộc họp làm rõ yêu cầu ↗</Button></>:<><p>21/09/2026 · Chốt phạm vi Sprint 1.</p><p>17/09/2026 · Bổ sung yêu cầu từ Game/App.</p></>}</section>}
+  {editing&&cfg&&<ProjectForm initial={cfg} close={()=>setEditing(false)} done={()=>setEditing(false)} notify={notify}/>}</>;
 }
 
 type Event={id:string;key:string;type:string;title:string;text:string;date:string;relations:string[]};

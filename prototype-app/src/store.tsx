@@ -1,7 +1,9 @@
 import React,{createContext,useContext,useState,useEffect} from 'react';
-import {Data,Report,Contribution,Share,Comment,User,Publication,seed} from './model';
+import {Data,Report,Contribution,Share,Comment,User,Publication,Eks,seed as seedBase,syncEks} from './model';
+import {ProjectConfig,seedProjects,syncProjects} from './project-config';
+const seed=():Data=>({...seedBase(),projects:seedProjects()});
 // Đổi hậu tố khi seed thay đổi để trình duyệt tự nhận dữ liệu mới.
-const key='igoal-reporting-v2-demo-2026-r8';
+const key='igoal-reporting-v2-demo-2026-r11';
 /** Mở drawer "Liên quan" theo entity id từ bất kỳ đâu (chip relation, dòng OKR). Null khi không cung cấp. */
 export const RelatedContext=createContext<((id:string)=>void)|null>(null);
 /** Mục tiêu đang mở ở panel phải của trang, để tô sáng dòng tương ứng. */
@@ -12,8 +14,10 @@ type Store={data:Data;saveReport:(r:Report)=>void;saveContribution:(c:Contributi
  addShares:(s:Share[])=>void;revokeShare:(id:string)=>void;addComment:(c:Comment)=>void;saveUser:(u:User)=>void;
  /** Ghi một lượt xuất bản: báo cáo gốc + bản tại từng nơi, chia sẻ cho quản lý, trạng thái gửi từng nơi. */
  publish:(p:{reports:Report[];shares:Share[];publications:Publication[]})=>void;savePublication:(p:Publication)=>void;
- /** Thiết lập liên kết EKS → mục tiêu team (My EKS). */
- saveAlignment:(eksId:string,goals:string[])=>void};
+ /** Tạo / sửa EKS kèm liên kết KS → KR team (`links[ksId]`), xóa EKS. */
+ saveEks:(e:Eks,links:Record<string,string[]>)=>void;deleteEks:(id:string)=>void;
+ /** Tạo / sửa cấu hình dự án (luồng Tạo dự án). */
+ saveProject:(p:ProjectConfig)=>void};
 const Context=createContext<Store>(null!);
 export function StoreProvider({children}:{children:React.ReactNode}){
  const [data,setData]=useState<Data>(()=>{try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):seed()}catch{return seed()}});
@@ -27,7 +31,11 @@ export function StoreProvider({children}:{children:React.ReactNode}){
  const saveUser=(u:User)=>setData(d=>({...d,users:d.users.map(x=>x.id===u.id?u:x)}));
  const publish=(p:{reports:Report[];shares:Share[];publications:Publication[]})=>setData(d=>{const ids=p.reports.map(r=>r.id);return {...d,reports:[...p.reports,...d.reports.filter(r=>!ids.includes(r.id))],shares:[...p.shares,...d.shares],publications:[...p.publications,...d.publications]}});
  const savePublication=(p:Publication)=>setData(d=>({...d,publications:d.publications.map(x=>x.id===p.id?p:x)}));
- const saveAlignment=(eksId:string,goals:string[])=>setData(d=>({...d,alignments:{...d.alignments,[eksId]:goals}}));
- return <Context.Provider value={{data,saveReport,saveContribution,reset:()=>setData(seed()),storageError,user,setUser,addShares,revokeShare,addComment,saveUser,publish,savePublication,saveAlignment}}>{children}</Context.Provider>;
+ const saveEks=(e:Eks,links:Record<string,string[]>)=>setData(d=>{const i=d.eks.findIndex(x=>x.id===e.id);const eks=i<0?[...d.eks,e]:d.eks.map(x=>x.id===e.id?e:x);return {...d,eks,alignments:{...d.alignments,...links}}});
+ const deleteEks=(id:string)=>setData(d=>({...d,eks:d.eks.filter(x=>x.id!==id)}));
+ // entities đọc EKS từ dữ liệu hiện tại (xem syncEks), chạy trước khi con render.
+ syncEks(data.eks??[]);syncProjects(data.projects??[]);
+ const saveProject=(p:ProjectConfig)=>setData(d=>({...d,projects:d.projects.some(x=>x.id===p.id)?d.projects.map(x=>x.id===p.id?p:x):[...d.projects,p]}));
+ return <Context.Provider value={{data,saveReport,saveContribution,reset:()=>setData(seed()),storageError,user,setUser,addShares,revokeShare,addComment,saveUser,publish,savePublication,saveEks,deleteEks,saveProject}}>{children}</Context.Provider>;
 }
 export const useStore=()=>useContext(Context);

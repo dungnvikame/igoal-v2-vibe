@@ -5,12 +5,12 @@ import {useStore} from './store';
 import {Modal,Badge,Empty,ProgressBar} from './ui';
 
 const KIND_ICON={weekly:CalendarBlank,instant:Clock,meeting:ChatsCircle,checkin:Flag} as const;
-const TYPE_LABEL:Record<string,string>={Project:'Dự án',Objective:'Mục tiêu',KR:'KR',KS:'KS',EKS:'EKS',Milestone:'Mốc'};
+const TYPE_LABEL:Record<string,string>={Project:'Dự án',Objective:'Mục tiêu',KR:'KR',KS:'KS',EKS:'EKS',EKSKS:'KS',Milestone:'Mốc'};
 
 /** Mọi bản ghi có relation tới entity. Với Objective, gom thêm bản ghi tag KR/KS con để nhìn được cả nhánh. */
 export function relatedOf(data:Data,id:string){
  const e=entities.find(x=>x.id===id);
- const childIds=e?.type==='Objective'?entities.filter(x=>['KR','KS'].includes(x.type)&&x.project===e.project).map(x=>x.id):[];
+ const childIds=e?.type==='Objective'?entities.filter(x=>['KR','KS'].includes(x.type)&&x.project===e.project).map(x=>x.id):e?.type==='EKS'?entities.filter(x=>x.parent===e.id).map(x=>x.id):[];
  const direct=<T extends {relations:string[]}>(list:T[])=>list.filter(x=>x.relations.includes(id));
  const viaChild=<T extends {relations:string[]}>(list:T[])=>list.filter(x=>!x.relations.includes(id)&&x.relations.some(r=>childIds.includes(r)));
  return {entity:e,reports:direct(data.reports),contributions:direct(data.contributions),childReports:viaChild(data.reports),childContributions:viaChild(data.contributions)};

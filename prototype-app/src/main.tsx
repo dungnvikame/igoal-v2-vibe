@@ -13,4 +13,6 @@ import './styles/polish.css';
 import './styles/sharing.css';
 import './styles/publish.css';
 import './styles/blocks.css';
+import './styles/eks-form.css';
+import './styles/project-form.css';
 createRoot(document.getElementById('root')!).render(<StoreProvider><App/></StoreProvider>);

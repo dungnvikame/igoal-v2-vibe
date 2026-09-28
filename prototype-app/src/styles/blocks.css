@@ -27,19 +27,49 @@
 .block-heading svg{width:13px;height:13px}
 
 /* ---------- EKS → mục tiêu team ---------- */
-.al-line{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 24px 12px 82px;border-bottom:1px solid var(--border-primary);font-size:12px;color:var(--text-tertiary)}
+.al-line{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;margin-top:3px;font-size:12px;font-weight:400;line-height:1.5;color:var(--text-tertiary)}
+.al-line i{font-style:normal}
 .al-icon{width:14px;height:14px;color:var(--text-tertiary)}
 .al-label{margin-right:2px}
 .al-chip{display:inline-flex;align-items:center;gap:5px;max-width:320px;padding:2px 8px;border-radius:999px;background:var(--purple-soft);color:var(--text-primary);font-size:12px}
 .al-chip b{color:var(--purple);font-weight:650}
 .al-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.al-edit{display:inline-flex;align-items:center;gap:4px;border:0;background:none;padding:3px 6px;border-radius:6px;font-size:12px;color:var(--text-secondary)}
+.al-edit{display:inline-grid;place-items:center;grid-auto-flow:column;gap:3px;border:0;background:none;padding:1px 5px;border-radius:5px;font-size:12px;color:var(--text-tertiary);opacity:0;transition:opacity .15s}
+.okr-row:hover .al-edit,.al-edit:focus-visible,.al-edit[aria-expanded=true],.al-edit.empty{opacity:1}
 .al-edit:hover{background:var(--bg-tertiary);color:var(--text-primary)}
-.al-pop{left:82px}
+.al-pop{left:0;top:calc(100% + 4px);font-weight:400}
 .al-pop-hint{font-size:12px;color:var(--text-tertiary);padding:8px 8px 0;line-height:1.5}
 .al-summary{display:flex;flex-direction:column;gap:6px}
 .al-sum-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
 .al-eks{min-width:22px;font-size:12px;color:var(--text-secondary)}
 .al-summary .al-chip{max-width:260px}
 .rp-align{display:block;font-size:11px;font-weight:400;color:var(--purple)}
-@media(max-width:680px){.al-line{padding-left:24px}.al-pop{left:0}.wblock.project{padding:10px 12px 2px}}
+@media(max-width:680px){.wblock.project{padding:10px 12px 2px}}
+/* Liên kết gọn: gợi ý + đóng góp OKR team là 2 dòng chữ nhỏ dưới chip, không thêm chip */
+.rp-suggest-line,.al-contrib{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin-top:6px;font-size:12px;line-height:1.5;color:var(--text-tertiary)}
+.rp-suggest-line button{display:inline-flex;align-items:center;gap:3px;border:0;background:none;padding:1px 4px;border-radius:5px;font-size:12px;color:var(--text-secondary);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-suggest-line button:hover{background:var(--bg-tertiary);color:var(--text-primary)}
+.al-contrib{gap:4px 6px}
+.al-contrib i{font-style:normal}
+.al-code{font-weight:650;color:var(--purple);cursor:help;border-bottom:1px dotted currentColor}
+.al-where{color:var(--text-tertiary)}
+.al-codes{display:inline-flex;gap:4px;white-space:nowrap}
+/* Menu "/": lệnh editor (Style / Insert) trên, "Báo cáo dự án" dưới cùng, ngăn bằng đường kẻ */
+.slash-menu{width:min(300px,90vw);max-height:360px}
+.slash-group+.slash-group{border-top:1px solid var(--border-secondary);margin-top:4px;padding-top:2px}
+.slash-row{padding:6px 8px}
+.slash-row strong{font-weight:450;font-size:13px}
+.slash-icon{width:24px;height:24px;border:0;color:var(--text-secondary)}
+.slash-glyph{font-size:12px;font-weight:600;font-family:ui-monospace,monospace}
+.wblock.free{margin-bottom:10px}
+.free-text{min-height:180px}
+/* Panel Lấy từ báo cáo: nội dung sẽ chèn vào đâu */
+.sp-dest{font-size:12px;color:var(--text-secondary);background:var(--bg-secondary);border-radius:7px;padding:6px 10px;margin:6px 0 10px}
+.sp-dest b{color:var(--text-primary);font-weight:600}
+/* Bộ lọc panel Lấy từ báo cáo */
+.sp-filters{display:flex;flex-direction:column;gap:6px;margin:10px 0 6px}
+.sp-filters .sp-search{margin:0}
+.sp-selects{display:flex;flex-wrap:wrap;gap:6px}
+.sp-selects select{flex:1;min-width:0;border:1px solid var(--border-secondary);border-radius:7px;background:var(--bg-primary);padding:5px 8px;font-size:12px;color:var(--text-secondary)}
+.sp-selects select.on{border-color:var(--blue);background:var(--blue-soft);color:var(--text-primary)}
+.sp-filter-meta{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-tertiary)}

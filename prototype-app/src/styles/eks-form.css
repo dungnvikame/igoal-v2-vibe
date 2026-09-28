@@ -1,0 +1,65 @@
+/* ---------- Luồng tạo / sửa EKS (EksForm) ---------- */
+.okr-edit{display:inline-grid;place-items:center;width:24px;height:24px;margin-left:6px;vertical-align:-4px;border:0;border-radius:6px;background:none;color:var(--text-tertiary);opacity:0;transition:opacity .15s}
+.okr-edit svg{width:14px;height:14px}
+.okr-row:hover .okr-edit,.okr-edit:focus-visible{opacity:1}
+.okr-edit:hover{background:var(--bg-primary);color:var(--text-primary)}
+.eks-steps{display:flex;gap:6px;list-style:none;margin:0 0 18px;padding:0;font-size:12px;color:var(--text-tertiary)}
+.eks-steps li{display:flex;align-items:center;gap:6px;flex:1;padding-bottom:8px;border-bottom:2px solid var(--border-secondary)}
+.eks-steps li span{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--bg-tertiary);font-size:11px;font-weight:650}
+.eks-steps li.current{color:var(--text-primary);font-weight:600;border-color:var(--accent)}
+.eks-steps li.current span{background:var(--accent);color:#fff}
+.eks-steps li.done{color:var(--text-secondary);border-color:var(--green)}
+.eks-steps li.done span{background:none;color:var(--green)}
+.eks-steps li.done svg{width:20px;height:20px}
+.eks-tabs{margin-bottom:16px}
+.eks-tabs .warn{width:13px;height:13px;margin-left:4px;color:var(--amber)}
+.eks-title{width:100%;border:0;background:none;padding:4px 0 14px;font-size:22px;font-weight:650;color:var(--text-primary)}
+.eks-title::placeholder{color:var(--text-tertiary)}
+.eks-title:focus{outline:none}
+.eks-card{border:1px solid var(--border-secondary);border-radius:10px;padding:16px 20px;margin-bottom:14px;background:var(--bg-primary)}
+.eks-card.flush{padding:0}
+.eks-field{display:grid;grid-template-columns:130px 1fr;align-items:center;gap:12px;font-size:12px;color:var(--text-secondary);padding:6px 0}
+.eks-field+.eks-field{border-top:1px solid var(--border-secondary);padding-top:12px;margin-top:8px}
+.eks-field textarea{border:0;background:none;padding:4px 0;font-size:14px;resize:none;color:var(--text-primary)}
+.eks-field textarea:focus{outline:none}
+.eks-pills{display:flex;gap:6px;flex-wrap:wrap}
+.eks-pills button{border:1px solid var(--border-secondary);background:var(--bg-secondary);border-radius:999px;padding:4px 13px;font-size:12px}
+.eks-pills button.on{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
+.eks-ks-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border-secondary);font-size:12px}
+.eks-ks-head button{border:0;background:none;color:var(--text-tertiary);border-radius:6px;display:grid;place-items:center;width:24px;height:24px}
+.eks-ks-head button:hover{background:var(--bg-tertiary);color:var(--text-primary)}
+.eks-label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--text-primary);margin-bottom:12px}
+.eks-label:last-child{margin-bottom:0}
+.eks-label>span{font-size:12px}
+.eks-input{border:0;border-radius:7px;background:var(--bg-tertiary);padding:10px 12px;font-size:14px;resize:none}
+.eks-select{width:170px;border:0;border-radius:7px;background:var(--bg-tertiary);padding:9px 12px;font-size:13px}
+.eks-w-head{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border-secondary);font-size:13px}
+.eks-w-total{padding:14px 20px;border-bottom:1px solid var(--border-secondary);font-size:12px;color:var(--text-secondary)}
+.eks-w-total .row{display:flex;justify-content:space-between}
+.eks-w-total strong{font-size:14px}
+.ok{color:var(--green)}.warn{color:var(--amber)}
+.eks-w-bar{display:flex;height:6px;border-radius:99px;background:var(--bg-tertiary);overflow:hidden;margin:8px 0 6px}
+.eks-w-bar span{transition:width .2s}
+.eks-w-row{display:grid;grid-template-columns:12px 34px minmax(0,1fr) auto;align-items:start;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border-secondary);font-size:13px}
+.eks-w-row:last-child{border-bottom:0}
+.eks-w-row>i{width:12px;height:12px;border-radius:3px;margin-top:4px}
+.eks-stepper{display:flex;align-items:center;gap:6px}
+.eks-stepper button{display:grid;place-items:center;width:28px;height:28px;border:1px solid var(--border-secondary);border-radius:6px;background:var(--bg-primary)}
+.eks-stepper input{width:64px;height:28px;border:0;border-radius:6px;background:var(--bg-tertiary);text-align:center;font-size:13px}
+.eks-align-hint{margin:0 0 12px}
+.eks-team{background:var(--bg-secondary);display:flex;flex-direction:column;gap:4px;padding:12px 16px}
+.eks-team small{font-size:11px;font-weight:650;letter-spacing:.5px;text-transform:uppercase;color:var(--text-tertiary)}
+.eks-team strong{font-size:13px}
+.eks-team strong b{color:var(--purple);margin-right:4px}
+.eks-link header{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:8px;font-size:13px;margin-bottom:10px}
+.eks-link header small{color:var(--text-tertiary)}
+.eks-kr-list{display:flex;flex-direction:column;gap:6px}
+.eks-kr{display:grid;grid-template-columns:16px 34px minmax(0,1fr);align-items:center;gap:6px;width:100%;text-align:left;border:1px solid var(--border-secondary);border-radius:8px;background:var(--bg-primary);padding:8px 10px;font-size:13px;color:var(--text-secondary)}
+.eks-kr b{color:var(--text-secondary)}
+.eks-kr:hover{border-color:var(--text-tertiary);color:var(--text-primary)}
+.eks-kr.on{border-color:var(--purple);background:var(--purple-soft);color:var(--text-primary)}
+.eks-kr.on b,.eks-kr.on svg{color:var(--purple)}
+.eks-link>.hint{display:block;margin-top:8px;font-size:12px}
+.eks-footer{display:flex;align-items:center;gap:10px;width:100%}
+.eks-foot-gap{flex:1}
+.danger-text{color:var(--red)!important;border-color:var(--red-soft)!important}

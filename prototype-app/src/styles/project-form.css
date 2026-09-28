@@ -1,0 +1,100 @@
+/* ---------- Luồng tạo / sửa dự án (ProjectForm) ---------- */
+.dialog.drawer:has(.pf-shell){width:min(780px,96vw)}
+.pf-new{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;background:var(--green-soft);color:var(--green);font-size:10px;font-weight:650;letter-spacing:.3px;vertical-align:1px;text-transform:uppercase}
+.pf-field{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--border-secondary);font-size:13px}
+.pf-label{color:var(--text-secondary);font-size:12px;padding-top:6px}
+.pf-hint{display:block;margin-top:6px;font-size:12px;line-height:1.5}
+.pf-selects,.pf-dates{gap:10px;flex-wrap:wrap;align-items:flex-end}
+.pf-dates label:not(.check-line){display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text-secondary)}
+.pf-dates .check-line{font-size:12px;padding-bottom:8px}
+.eks-select:disabled{opacity:.5}
+.eks-select.small{width:130px;padding:6px 10px;font-size:12px}
+.eks-input.one{flex:1;min-width:0;padding:8px 10px}
+.pf-intro{padding:12px 20px;margin:0;border-bottom:1px solid var(--border-secondary)}
+.pf-intro-top{display:flex;gap:8px;align-items:flex-start;margin:0 0 12px}
+.pf-intro-top svg{width:16px;height:16px;margin-top:3px;color:var(--blue)}
+.pf-role{padding:12px 20px;border-bottom:1px solid var(--border-secondary)}
+.pf-role:last-child{border-bottom:0}
+.pf-role-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;font-size:13px}
+.pf-role-head small{color:var(--text-tertiary);font-size:12px}
+.req{color:var(--red);font-style:normal;margin-left:2px}
+.pf-people{display:flex;flex-wrap:wrap;gap:6px}
+.pf-person{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border-secondary);border-radius:999px;background:var(--bg-primary);padding:3px 10px 3px 3px;font-size:12px;color:var(--text-secondary)}
+.pf-person:hover{border-color:var(--text-tertiary);color:var(--text-primary)}
+.pf-person.on{border-color:var(--blue);background:var(--blue-soft);color:var(--text-primary)}
+.pf-person.on svg{color:var(--blue)}
+.pf-stage{padding:12px 20px;border-bottom:1px solid var(--border-secondary)}
+.pf-stage:last-child{border-bottom:0}
+.pf-stage.current{background:var(--bg-secondary);box-shadow:inset 3px 0 0 var(--accent)}
+.pf-stage-head{display:grid;grid-template-columns:86px minmax(0,1fr) 150px 26px;gap:10px;align-items:center}
+.pf-now{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:650;color:var(--accent)}
+.pf-stage-name{border:0;background:none;font-size:14px;font-weight:600;padding:4px 0;min-width:0}
+.pf-stage-name:focus{outline:none;box-shadow:0 1px 0 var(--border-secondary)}
+.pf-stage-body{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 0 96px}
+.pf-sub{font-size:12px;color:var(--text-tertiary)}
+.pf-stage>.hint{display:block;margin:6px 0 0 96px;font-size:12px}
+.pf-x{display:grid;place-items:center;width:26px;height:26px;border:0;border-radius:6px;background:none;color:var(--text-tertiary)}
+.pf-x:hover{background:var(--bg-tertiary);color:var(--text-primary)}
+.pf-h{display:flex;align-items:center;gap:6px;font-size:14px;margin:0 0 4px}
+.pf-h svg{width:15px;height:15px}
+.pf-h.pad,.hint.pad{padding:0 20px}
+.pf-h.pad{padding-top:14px}
+.eks-card>.hint{margin:0 0 10px;font-size:12px}
+.pf-ms{gap:8px;margin-bottom:8px;align-items:center}
+.pf-slack{display:flex;align-items:center;gap:6px;border-radius:7px;background:var(--bg-tertiary);padding:0 10px;max-width:340px}
+.pf-slack svg{width:15px;height:15px;color:var(--text-tertiary)}
+.pf-slack input{flex:1;border:0;background:none;padding:9px 0;font-size:13px}
+.pf-slack input:focus{outline:none}
+.pf-matrix-wrap{overflow-x:auto;padding:4px 20px 16px}
+.pf-matrix{width:100%;border-collapse:collapse;font-size:12px}
+.pf-matrix th,.pf-matrix td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--border-secondary);white-space:nowrap}
+.pf-matrix thead th{color:var(--text-tertiary);font-weight:600}
+.pf-matrix tbody th,.pf-matrix thead th:first-child{text-align:left;font-weight:600;color:var(--text-primary)}
+.pf-matrix input{width:16px;height:16px}
+.pf-matrix td svg{color:var(--green)}
+/* Trang dự án */
+.pf-strip{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin:-10px 0 16px;font-size:12px;color:var(--text-secondary)}
+.pf-strip i{font-style:normal;color:var(--text-tertiary)}
+.pf-stage-chip{margin-left:6px;padding:2px 10px;border-radius:999px;background:var(--accent-soft);color:var(--text-primary)}
+.pf-settings h3{margin:20px 0 8px}
+.pf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 32px}
+.pf-settings dl{display:grid;grid-template-columns:90px 1fr;gap:6px 12px;margin:0;font-size:13px}
+.pf-settings dt{color:var(--text-tertiary)}
+.pf-settings dd{margin:0}
+.pf-timeline{display:flex;gap:0;list-style:none;padding:0;margin:0;overflow-x:auto}
+.pf-timeline li{flex:1;min-width:150px;display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-top:3px solid var(--border-secondary);font-size:12px;color:var(--text-secondary)}
+.pf-timeline li strong{font-size:13px;color:var(--text-primary)}
+.pf-timeline li.current{border-color:var(--accent);background:var(--bg-secondary)}
+.pf-kr{display:inline-block;margin:0 8px 6px 0;padding:3px 10px;border-radius:999px;background:var(--purple-soft);font-size:12px}
+.pf-kr b{color:var(--purple)}
+@media(max-width:680px){.pf-field{grid-template-columns:1fr;gap:6px}.pf-stage-head{grid-template-columns:70px 1fr 26px}.pf-stage-head input[type=date]{grid-column:2}.pf-stage-body,.pf-stage>.hint{margin-left:0}}
+/* Tìm & chọn thành viên theo vai trò (MemberSearch) */
+.ms{position:relative}
+.ms-box{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-height:40px;padding:5px 32px 5px 8px;border-radius:8px;background:var(--bg-tertiary);cursor:text;position:relative}
+.ms-box.open{box-shadow:0 0 0 2px var(--blue-soft)}
+.ms-chip{display:inline-flex;align-items:center;gap:6px;padding:2px 4px 2px 2px;border-radius:999px;background:var(--bg-primary);border:1px solid var(--border-secondary);font-size:12px}
+.ms-chip button{display:grid;place-items:center;width:18px;height:18px;border:0;border-radius:50%;background:none;color:var(--text-tertiary)}
+.ms-chip button:hover{background:var(--bg-tertiary);color:var(--text-primary)}
+.ms-input{display:flex;align-items:center;gap:6px;flex:1;min-width:140px;color:var(--text-tertiary)}
+.ms-input input{flex:1;border:0;background:none;padding:4px 0;font-size:13px;color:var(--text-primary)}
+.ms-input input:focus{outline:none}
+.ms-caret{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-tertiary)}
+.ms-pop{position:absolute;z-index:45;top:calc(100% + 4px);left:0;right:0;background:var(--bg-primary);border:1px solid var(--border-secondary);border-radius:10px;box-shadow:var(--shadow);padding:4px;max-height:280px;overflow:auto}
+.ms-row{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;text-align:left;padding:7px 8px;border-radius:7px}
+.ms-row.on{background:var(--bg-secondary)}
+.ms-row strong{display:block;font-size:13px;font-weight:550}
+.ms-row small{display:block;font-size:12px;color:var(--text-tertiary)}
+.eks-select.wide{width:100%;max-width:360px}
+/* OKR dự án trong luồng tạo */
+.pf-okr-head{display:grid;grid-template-columns:30px minmax(0,1fr) 26px;gap:10px;align-items:start;margin-bottom:10px}
+.pf-okr-head .okr-code{margin-top:4px}
+.pf-okr-title{border:0;background:none;padding:4px 0;font-size:15px;font-weight:600;resize:none;color:var(--text-primary)}
+.pf-okr-title:focus{outline:none;box-shadow:0 1px 0 var(--border-secondary)}
+.pf-okr-item{display:grid;grid-template-columns:80px minmax(0,1fr) 26px;gap:8px;align-items:center;margin:0 0 8px 40px}
+.pf-okr-item .eks-select.small{width:80px}
+.pf-okr>.button{margin-left:40px}
+.pf-okr-existing{background:var(--bg-secondary);display:flex;flex-direction:column;gap:4px;padding:12px 16px}
+.pf-okr-existing small{font-size:11px;font-weight:650;letter-spacing:.5px;text-transform:uppercase;color:var(--text-tertiary)}
+.pf-okr-existing strong{font-size:13px;font-weight:550}
+.pf-intro-top b{color:var(--text-primary)}
+.pf-intro b{color:var(--text-primary);font-weight:600}

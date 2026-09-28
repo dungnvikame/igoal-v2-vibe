@@ -15,7 +15,7 @@ export const nameOf=(e:Relation)=>e.label.replace(/^(KR|KS)\d+\s*·\s*/,'').spli
  * Chọn liên kết cho báo cáo: chip đã chọn (× để gỡ), gợi ý AI dạng chip viền nét đứt (bấm để thêm),
  * và popover tìm kiếm gom theo dự án, bấm một dòng để bật/tắt. Liên kết khóa (dự án đang mở) không gỡ được.
  */
-export function RelationPicker({value,onChange,locked=[],suggestions=[],personal=false}:{value:string[];onChange:(v:string[])=>void;locked?:string[];suggestions?:string[];personal?:boolean}){
+export function RelationPicker({value,onChange,locked=[],suggestions=[],personal=false,footer}:{value:string[];onChange:(v:string[])=>void;locked?:string[];suggestions?:string[];personal?:boolean;footer?:React.ReactNode}){
  const [open,setOpen]=useState(false),[q,setQ]=useState('');const ref=useRef<HTMLDivElement>(null);const {data}=useStore();
  useEffect(()=>{if(!open)return;const off=(e:MouseEvent)=>{if(!ref.current?.contains(e.target as Node))setOpen(false)};const esc=(e:KeyboardEvent)=>{if(e.key==='Escape')setOpen(false)};document.addEventListener('mousedown',off);document.addEventListener('keydown',esc);return()=>{document.removeEventListener('mousedown',off);document.removeEventListener('keydown',esc)}},[open]);
  const toggle=(id:string)=>{if(locked.includes(id))return;onChange(value.includes(id)?value.filter(x=>x!==id):[...value,id])};
@@ -28,9 +28,11 @@ export function RelationPicker({value,onChange,locked=[],suggestions=[],personal
  return <div className="rp" ref={ref}>
   <div className="rp-chips">
    {selected.map(e=><span className="rp-chip" key={e.id} title={e.label}><b>{codeOf(e)}</b><span>{nameOf(e)}</span>{locked.includes(e.id)?<Lock size={12} aria-label="Gắn cố định"/>:<button aria-label={'Gỡ '+e.label} onClick={()=>toggle(e.id)}><X size={12}/></button>}</span>)}
-   {pending.map(e=><button className="rp-chip suggest" key={e.id} title={'Gợi ý: '+e.label} onClick={()=>toggle(e.id)}><Plus size={12}/><b>{codeOf(e)}</b><span>{nameOf(e)}</span></button>)}
    <button className="rp-add" onClick={()=>setOpen(!open)} aria-expanded={open}><Plus size={14}/> {selected.length?'Thêm':'Thêm liên kết'}</button>
   </div>
+  {/* Gợi ý tách thành một dòng chữ nhỏ bên dưới, không trộn với chip đã chọn. */}
+  {pending.length>0&&<div className="rp-suggest-line"><span>Gợi ý từ nguồn đã dùng:</span>{pending.map(e=><button key={e.id} title={'Thêm '+e.label} onClick={()=>toggle(e.id)}><Plus size={11}/>{codeOf(e)} {nameOf(e)}</button>)}</div>}
+  {footer}
   {open&&<div className="rp-pop" role="listbox" aria-label="Chọn liên kết">
    <div className="rp-search"><MagnifyingGlass size={16}/><input autoFocus aria-label="Tìm liên kết" placeholder="Tìm dự án, mục tiêu, KR, KS…" value={q} onChange={e=>setQ(e.target.value)}/></div>
    <div className="rp-list">{groups.length?groups.map(g=><div key={g.id}><div className="rp-group">{g.label}</div>{g.items.map(e=>{const on=value.includes(e.id);return <button key={e.id} role="option" aria-selected={on} className={'rp-row '+(e.type==='Project'?'root':'')+(on?' on':'')} disabled={locked.includes(e.id)} onClick={()=>toggle(e.id)}><span className="rp-code">{codeOf(e)}</span><span className="rp-name">{nameOf(e)}{e.type==='EKS'&&<small className="rp-align">{alignmentHint(data,e.id)}</small>}</span>{on&&<Check size={16}/>}</button>})}</div>):<p className="rp-empty">Không tìm thấy</p>}</div>

@@ -89,7 +89,7 @@ export function runAi(prompt:string,sections:Section[],reports:Report[],fallback
  const proj=projects.find(p=>q.includes(p.label.toLowerCase()))?.id??(/dự án này|dự án đang/.test(q)?fallbackProject:undefined);
  if(proj&&/chỉ|tập trung|riêng|liên quan/.test(q))apply(focusProject(cur,proj,reports));
  // Nhận mục theo 2 từ đầu của tên mục ("bỏ mục khó khăn" → "Khó khăn / vấn đề").
- const sec=sections.find(s=>q.includes(s.label.toLowerCase().split(/\s+/).slice(0,2).join(' ')));
+ const sec=sections.find(s=>s.label&&q.includes(s.label.toLowerCase().split(/\s+/).slice(0,2).join(' ')));
  if(sec&&/bỏ|ẩn|xóa/.test(q)&&/mục/.test(q))apply(dropSection(cur,sec.label));
  if(/con số|số liệu|kinh doanh|doanh thu|tỷ lệ|%|số /.test(q)&&/ẩn|bỏ|che|xóa|không/.test(q))apply(hideNumbers(cur));
  if(/ngắn|rút gọn|tóm tắt|súc tích/.test(q))apply(shorten(cur));
