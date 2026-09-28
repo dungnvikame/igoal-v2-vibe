@@ -6,8 +6,37 @@ import {accessOf,containerOf,teamLabel,teamMembers,userOf,userByName,shortName,l
 import {Button,Modal,AutoTextarea,nowTime} from './ui';
 
 type Principal={principal:Share['principal'];id:string};
-type Option=Principal&{name:string;sub:string;note?:string};
+export type ShareOption=Principal&{name:string;sub:string;note?:string};
+type Option=ShareOption;
 const initial=(name:string)=>shortName(name)[0];
+/** Tạo các lượt chia sẻ (vai trò Người xem) từ người / team đã chọn. */
+export const sharesFrom=(pending:ShareOption[],reportId:string,by:string):Share[]=>pending.map(p=>({id:uid(),reportId,principal:p.principal,principalId:p.id,role:'viewer',by,at:today}));
+/** Tên hiển thị trong thông báo: tên gọi của người, "Team X" của team. */
+export const shareNames=(pending:ShareOption[])=>pending.map(p=>p.principal==='user'?shortName(p.name):p.name).join(', ');
+
+/**
+ * Ô "Thêm người hoặc team" (chip + gợi ý, Enter chọn gợi ý đầu, Backspace bỏ chip cuối). Dùng chung cho dialog Chia sẻ
+ * và màn Xuất bản (cấu hình chia sẻ trước khi gửi). Người đã xem được qua nguồn khác vẫn chọn được, chỉ hiện ghi chú.
+ */
+export function ShareInput({report,pending,onChange}:{report:Report;pending:ShareOption[];onChange:(p:ShareOption[])=>void}){
+ const {data}=useStore();const [q,setQ]=useState(''),[focus,setFocus]=useState(false);
+ const shares=data.shares.filter(s=>s.reportId===report.id);const owner=userByName(data,report.owner);
+ const taken=(p:Principal)=>pending.some(x=>x.principal===p.principal&&x.id===p.id)||shares.some(s=>s.principal===p.principal&&s.principalId===p.id);
+ const term=q.trim().toLowerCase();
+ const options:Option[]=[
+  ...data.users.filter(u=>u.active&&u.id!==owner?.id).map(u=>{const a=accessOf(data,{...report,status:'PUBLISHED'},u.id);return {principal:'user' as const,id:u.id,name:u.name,sub:u.role+' · '+teamLabel(u.team),note:a.canView?'Đang xem được · '+a.sources[0].label:undefined}}),
+  ...teams.map(t=>({principal:'team' as const,id:t.id,name:'Team '+t.label,sub:teamMembers(data,t.id).length+' thành viên'})),
+ ].filter(o=>!taken(o)&&(!term||o.name.toLowerCase().includes(term)));
+ const pick=(o:Option)=>{onChange([...pending,o]);setQ('')};
+ return <div className="share-add">
+  <div className="share-input">
+   {pending.map(p=><span className="share-chip" key={p.principal+p.id}>{p.principal==='team'?<Users size={14}/>:<span className="avatar tiny">{initial(p.name)}</span>}{p.name}<button aria-label={'Bỏ '+p.name} onClick={()=>onChange(pending.filter(y=>y!==p))}><X size={12}/></button></span>)}
+   <input aria-label="Thêm người hoặc team" placeholder={pending.length?'Thêm nữa…':'Thêm người hoặc team'} value={q} onChange={e=>setQ(e.target.value)} onFocus={()=>setFocus(true)} onBlur={()=>setFocus(false)} onKeyDown={e=>{if(e.key==='Enter'&&options[0]){e.preventDefault();pick(options[0])}if(e.key==='Backspace'&&!q&&pending.length)onChange(pending.slice(0,-1))}}/>
+  </div>
+  {pending.length>0&&<select className="meta-input share-role-select" aria-label="Vai trò" value="viewer" disabled><option value="viewer">Người xem · xem & bình luận</option></select>}
+  {focus&&<div className="share-options" role="listbox">{options.length?options.map(o=><button key={o.principal+o.id} role="option" aria-selected="false" onMouseDown={e=>{e.preventDefault();pick(o)}}>{o.principal==='team'?<span className="share-team-icon"><Users size={16}/></span>:<span className="avatar tiny">{initial(o.name)}</span>}<span className="share-row-text"><strong>{o.name}</strong><small>{o.sub}{o.note&&<> · <em>{o.note}</em></>}</small></span></button>):<p className="hint">Không tìm thấy người hoặc team phù hợp.</p>}</div>}
+ </div>;
+}
 
 /** Một dòng trong danh sách "Người có quyền truy cập" (kiểu Google Drive): avatar/icon · tên · mô tả · quyền bên phải. */
 function AccessRow({icon,title,sub,right,muted=false}:{icon:React.ReactNode;title:React.ReactNode;sub?:React.ReactNode;right:React.ReactNode;muted?:boolean}){
@@ -21,20 +50,12 @@ function AccessRow({icon,title,sub,right,muted=false}:{icon:React.ReactNode;titl
  */
 export function ShareDialog({report,close,notify}:{report:Report;close:()=>void;notify:(s:string)=>void}){
  const {data,user,addShares,revokeShare}=useStore();
- const [q,setQ]=useState(''),[focus,setFocus]=useState(false),[pending,setPending]=useState<Option[]>([]);
+ const [pending,setPending]=useState<Option[]>([]);
  const shares=data.shares.filter(s=>s.reportId===report.id).sort((a,b)=>b.at.localeCompare(a.at));
  const owner=userByName(data,report.owner);const c=containerOf(data,report);
  const admins=(c?entityAdmins[c.id]??[]:[]).filter(id=>id!==owner?.id).map(id=>userOf(data,id)).filter(u=>!!u&&u.active);
  const members=c?.kind==='project'?(projectMembers[c.id]??[]).map(id=>userOf(data,id)).filter(u=>!!u&&u.active):[];
- const taken=(p:Principal)=>pending.some(x=>x.principal===p.principal&&x.id===p.id)||shares.some(s=>s.principal===p.principal&&s.principalId===p.id);
- const term=q.trim().toLowerCase();
- // Gợi ý: user active (trừ người viết) và team. Người đã xem được qua nguồn khác vẫn chia sẻ được, chỉ hiện ghi chú.
- const options:Option[]=[
-  ...data.users.filter(u=>u.active&&u.id!==owner?.id).map(u=>{const a=accessOf(data,report,u.id);return {principal:'user' as const,id:u.id,name:u.name,sub:u.role+' · '+teamLabel(u.team),note:a.canView?'Đang xem được · '+a.sources[0].label:undefined}}),
-  ...teams.map(t=>({principal:'team' as const,id:t.id,name:'Team '+t.label,sub:teamMembers(data,t.id).length+' thành viên'})),
- ].filter(o=>!taken(o)&&(!term||o.name.toLowerCase().includes(term)));
- const pick=(o:Option)=>{setPending(p=>[...p,o]);setQ('')};
- const submit=()=>{addShares(pending.map(p=>({id:uid(),reportId:report.id,principal:p.principal,principalId:p.id,role:'viewer',by:user,at:today})));notify('Đã chia sẻ với '+pending.map(p=>p.principal==='user'?shortName(p.name):p.name).join(', '));close()};
+ const submit=()=>{addShares(sharesFrom(pending,report.id,user));notify('Đã chia sẻ với '+shareNames(pending));close()};
  const revoke=(s:Share)=>{
   revokeShare(s.id);
   if(s.principal==='team'){notify('Đã gỡ chia sẻ với team '+teamLabel(s.principalId));return}
@@ -46,14 +67,7 @@ export function ShareDialog({report,close,notify}:{report:Report;close:()=>void;
  const remove=(s:Share,label:string)=><><span className="share-role">Người xem</span><button className="icon-x" aria-label={'Gỡ quyền của '+label} title="Gỡ quyền" onClick={()=>revoke(s)}><X size={14}/></button></>;
 
  return <Modal title={`Chia sẻ “${report.title}”`} close={close} footer={<><Button className="share-copy" onClick={copy}><LinkSimple/> Sao chép liên kết</Button>{pending.length?<><Button onClick={()=>setPending([])}>Hủy</Button><Button primary onClick={submit}><PaperPlaneRight/> Chia sẻ</Button></>:<Button primary onClick={close}>Xong</Button>}</>}>
-  <div className="share-add">
-   <div className="share-input">
-    {pending.map(p=><span className="share-chip" key={p.principal+p.id}>{p.principal==='team'?<Users size={14}/>:<span className="avatar tiny">{initial(p.name)}</span>}{p.name}<button aria-label={'Bỏ '+p.name} onClick={()=>setPending(x=>x.filter(y=>y!==p))}><X size={12}/></button></span>)}
-    <input aria-label="Thêm người hoặc team" placeholder={pending.length?'Thêm nữa…':'Thêm người hoặc team'} value={q} onChange={e=>setQ(e.target.value)} onFocus={()=>setFocus(true)} onBlur={()=>setFocus(false)} onKeyDown={e=>{if(e.key==='Enter'&&options[0]){e.preventDefault();pick(options[0])}if(e.key==='Backspace'&&!q&&pending.length)setPending(p=>p.slice(0,-1))}}/>
-   </div>
-   {pending.length>0&&<select className="meta-input share-role-select" aria-label="Vai trò" value="viewer" disabled><option value="viewer">Người xem · xem & bình luận</option></select>}
-   {focus&&<div className="share-options" role="listbox">{options.length?options.map(o=><button key={o.principal+o.id} role="option" aria-selected="false" onMouseDown={e=>{e.preventDefault();pick(o)}}>{o.principal==='team'?<span className="share-team-icon"><Users size={16}/></span>:<span className="avatar tiny">{initial(o.name)}</span>}<span className="share-row-text"><strong>{o.name}</strong><small>{o.sub}{o.note&&<> · <em>{o.note}</em></>}</small></span></button>):<p className="hint">Không tìm thấy người hoặc team phù hợp.</p>}</div>}
-  </div>
+  <ShareInput report={report} pending={pending} onChange={setPending}/>
 
   <h4 className="share-title">Người có quyền truy cập</h4>
   <ul className="share-list">

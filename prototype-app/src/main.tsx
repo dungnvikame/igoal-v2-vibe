@@ -11,4 +11,5 @@ import './styles/relation-clean.css';
 import './styles/ux-clean.css';
 import './styles/polish.css';
 import './styles/sharing.css';
+import './styles/publish.css';
 createRoot(document.getElementById('root')!).render(<StoreProvider><App/></StoreProvider>);

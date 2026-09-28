@@ -1,10 +1,12 @@
 import React,{useState} from 'react';
-import {Info,LinkSimple,CheckCircle,Plus,PaperPlaneTilt,ArrowSquareOut,ShareNetwork,ChatCircle,Eye} from 'phosphor-react';
+import {Info,LinkSimple,CheckCircle,Plus,PaperPlaneTilt,ArrowSquareOut,ShareNetwork,ChatCircle,Eye,Broadcast} from 'phosphor-react';
 import {Report,Contribution,blankContribution,kindLabel,dateLabel,projects} from './model';
 import {useStore} from './store';
 import {Button,Badge,Relations,ReportBody,EditorFrame,EditorPanel,UserChip,MetaRow} from './ui';
 import {accessOf,levelLabel} from './sharing';
 import {ShareDialog,Attachments,CommentsPanel,NoAccess} from './Share';
+import {PublicationsPanel} from './Publish';
+import {publicationsOf} from './publishing';
 
 /** Mục nào của báo cáo có thể là đóng góp cá nhân (kết quả, quyết định, việc cần làm). */
 const CONTRIB_SECTIONS=/^(Kết quả|Nội dung chính|Quyết định|Kết quả đã làm)/;
@@ -14,7 +16,7 @@ const CONTRIB_SECTIONS=/^(Kết quả|Nội dung chính|Quyết định|Kết qu
  * Thông tin (meta, liên kết, Slack, quyền của bạn) · Bình luận · Nguồn đã dùng (danh sách → mở báo cáo gốc) · Ghi nhận đóng góp (chọn một dòng → form prefill).
  * Quyền: không xem được → màn chặn. Owner / ADMIN entity có nút Chia sẻ; người được chia sẻ thấy nhãn "Người xem" (xem + bình luận, không sửa).
  */
-export function ReportDetail({report,close,source,contribute,notify}:{report:Report;close:()=>void;source:(id:string)=>void;contribute:(c:Contribution)=>void;notify:(s:string)=>void}){
+export function ReportDetail({report,close,source,contribute,notify,openReport}:{report:Report;close:()=>void;source:(id:string)=>void;contribute:(c:Contribution)=>void;notify:(s:string)=>void;openReport:(r:Report)=>void}){
  const {data,saveReport,user}=useStore();const r=data.reports.find(x=>x.id===report.id)||report;
  const [panel,setPanel]=useState<string|null>('info'),[sharing,setSharing]=useState(false);
  const access=accessOf(data,r,user);
@@ -31,6 +33,8 @@ export function ReportDetail({report,close,source,contribute,notify}:{report:Rep
  const recorded=(t:string)=>data.contributions.some(c=>c.title===t&&c.evidence.some(e=>e.value===r.id));
  const record=(t:string)=>contribute({...blankContribution(r),title:t,impact:''});
  const project=projects.find(p=>r.relations.includes(p.id));
+ // Nơi xuất hiện: chỉ người viết thấy trạng thái gửi từng nơi (người xem chỉ thấy bản ở nơi của mình).
+ const pubs=access.level==='owner'?publicationsOf(data,r):[];const pubFailed=pubs.some(p=>p.status==='FAILED');
 
  const panels:EditorPanel[]=[
   {key:'info',label:'Thông tin',icon:<Info/>,render:()=><div className="sp">
@@ -44,6 +48,7 @@ export function ReportDetail({report,close,source,contribute,notify}:{report:Rep
    {access.canShare&&r.status==='PUBLISHED'&&<MetaRow label="Đã chia sẻ"><button className="text-button" onClick={()=>setSharing(true)}>{shareCount.filter(s=>s.principal==='user').length} người · {shareCount.filter(s=>s.principal==='team').length} team</button></MetaRow>}
    {r.kind==='meeting'&&<div className="aside-card slack"><div className="row between"><strong>{r.channel}</strong><Badge tone={r.slack==='FAILED'?'warning':'success'}>{r.slack==='FAILED'?'Chưa gửi được':'Đã gửi Slack'}</Badge></div>{r.slack==='FAILED'&&<Button onClick={retry}><PaperPlaneTilt/> Gửi lại</Button>}</div>}
   </div>},
+  ...(pubs.length?[{key:'pubs',label:'Nơi xuất hiện',icon:<Broadcast/>,render:()=><PublicationsPanel report={r} openReport={openReport} notify={notify}/>} as EditorPanel]:[]),
   ...(r.status==='PUBLISHED'?[{key:'comments',label:'Bình luận',icon:<ChatCircle/>,render:()=><CommentsPanel report={r}/>} as EditorPanel]:[]),
   ...(sourceIds.length?[{key:'sources',label:'Nguồn đã dùng',icon:<LinkSimple/>,render:()=><div className="sp">
    <div className="sp-head"><h3>Nguồn đã dùng</h3></div>
@@ -59,7 +64,7 @@ export function ReportDetail({report,close,source,contribute,notify}:{report:Rep
  if(!access.canView)return <EditorFrame back={close}><NoAccess/></EditorFrame>;
 
  return <><EditorFrame back={close} panels={panels} panel={panel} onPanel={setPanel}
-  actions={<>{r.status==='DRAFT'&&<Badge>Bản nháp</Badge>}{access.level==='viewer'&&<Badge><Eye size={12}/> Người xem</Badge>}{r.kind==='meeting'&&r.slack==='FAILED'&&<Badge tone="warning">Slack chưa gửi</Badge>}{candidates.length>0&&<Button quiet className={panel==='contrib'?'active-filter':''} onClick={()=>setPanel(panel==='contrib'?'info':'contrib')}><CheckCircle/> Ghi nhận đóng góp</Button>}{r.status==='PUBLISHED'&&<Button quiet className={panel==='comments'?'active-filter':''} onClick={()=>setPanel(panel==='comments'?'info':'comments')}><ChatCircle/> Bình luận{commentCount>0&&<span className="count-pill neutral">{commentCount}</span>}</Button>}{access.canShare&&r.status==='PUBLISHED'&&<Button primary onClick={()=>setSharing(true)}><ShareNetwork/> Chia sẻ</Button>}</>}>
+  actions={<>{r.status==='DRAFT'&&<Badge>Bản nháp</Badge>}{access.level==='viewer'&&<Badge><Eye size={12}/> Người xem</Badge>}{r.kind==='meeting'&&r.slack==='FAILED'&&<Badge tone="warning">Slack chưa gửi</Badge>}{pubs.length>0&&<Button quiet className={panel==='pubs'?'active-filter':''} onClick={()=>setPanel(panel==='pubs'?'info':'pubs')}><Broadcast/> {pubs.length} nơi xuất hiện{pubFailed&&<span className="count-pill warn">!</span>}</Button>}{candidates.length>0&&<Button quiet className={panel==='contrib'?'active-filter':''} onClick={()=>setPanel(panel==='contrib'?'info':'contrib')}><CheckCircle/> Ghi nhận đóng góp</Button>}{r.status==='PUBLISHED'&&<Button quiet className={panel==='comments'?'active-filter':''} onClick={()=>setPanel(panel==='comments'?'info':'comments')}><ChatCircle/> Bình luận{commentCount>0&&<span className="count-pill neutral">{commentCount}</span>}</Button>}{access.canShare&&r.status==='PUBLISHED'&&<Button primary onClick={()=>setSharing(true)}><ShareNetwork/> Chia sẻ</Button>}</>}>
   <h1 className="doc-title">{r.title}</h1>
   <p className="doc-meta">{r.owner}<i>·</i>{dateLabel(r.date)}<i>·</i>{kindLabel[r.kind]}{project&&<><i>·</i>{project.label}</>}</p>
   <div className="divider"/>

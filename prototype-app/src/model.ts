@@ -37,7 +37,10 @@ export type Checkin = {ksId:string;progress:number;result:string;next:string;iss
 /** Mảng báo cáo ("Loại báo cáo" trên iGoal thật): PM → Sản phẩm, UA → Kinh doanh, Creative Lead → Creative (requirement 1). */
 export const tracks=['Sản phẩm','Kinh doanh','Creative'] as const;
 export type Track=typeof tracks[number];
-export type Report = {id:string;title:string;kind:'weekly'|'meeting'|'instant'|'checkin';scope:'personal'|'project';track?:Track;date:string;owner:string;status:'DRAFT'|'PUBLISHED';relations:string[];sections:Section[];actions:ActionItem[];checkins?:Checkin[];attachments?:Attachment[];slack:'NOT_SENT'|'SENT'|'FAILED';channel:string;participants:string;audio:string;carry:string[];reviewed:boolean};
+export type Report = {id:string;title:string;kind:'weekly'|'meeting'|'instant'|'checkin';scope:'personal'|'project';track?:Track;date:string;owner:string;status:'DRAFT'|'PUBLISHED';relations:string[];sections:Section[];actions:ActionItem[];checkins?:Checkin[];attachments?:Attachment[];
+ /** Xuất bản đa nơi: `variants` = nội dung riêng theo nơi xuất hiện (lưu trong nháp); `origin` = id báo cáo gốc nếu đây là bản xuất hiện ở nơi khác; `destination` = id nơi xuất hiện của bản này. */
+ variants?:Record<string,Section[]>;origin?:string;destination?:string;
+ slack:'NOT_SENT'|'SENT'|'FAILED';channel:string;participants:string;audio:string;carry:string[];reviewed:boolean};
 /** Tệp đính kèm của báo cáo: không có quyền riêng, kế thừa 100% quyền xem của báo cáo chứa nó. */
 export type Attachment={name:string;size:string};
 /** Quản lý trực tiếp mock, hiển thị ở meta của mọi editor giống iGoal thật. */
@@ -69,7 +72,22 @@ export const projectMembers:Record<string,string[]>={igoal:['dung','nguyet','quy
 export type Share={id:string;reportId:string;principal:'user'|'team';principalId:string;role:'viewer';by:string;at:string};
 /** Bình luận trên báo cáo. Ai xem được báo cáo thì bình luận được. */
 export type Comment={id:string;reportId:string;userId:string;text:string;at:string;time:string};
-export type Data = {reports:Report[];contributions:Contribution[];users:User[];shares:Share[];comments:Comment[]};
+// ---------- Xuất bản đa nơi (Publish destinations) ----------
+/**
+ * Người được phép VIẾT báo cáo cho dự án (khác với thành viên chỉ được xem). Màn Xuất bản chỉ hiện dự án / kênh Slack user có quyền viết.
+ * Ví dụ: Dũng là thành viên My iKame nhưng không có quyền viết → My iKame không xuất hiện trong danh sách nơi xuất hiện của Dũng.
+ */
+export const reportWriters:Record<string,string[]>={igoal:['dung','nguyet','quy'],iwiki:['dung','quynh'],myikame:['long','quynh']};
+/** Kênh Slack của dự án. Người viết được của dự án thì gửi recap được vào kênh đó. */
+export const projectChannels:Record<string,string>={igoal:'#ikame-igoal-project',iwiki:'#iwiki-van-hanh',myikame:'#my-ikame'};
+/** Quản lý trực tiếp theo user (mock). Nơi "Quản lý trực tiếp" = chia sẻ trực tiếp bản báo cáo cho người này. */
+export const managerOf:Record<string,string>={dung:'long',nguyet:'dung',quy:'dung',quynh:'long',long:'luc'};
+export type DestKind='eks'|'project'|'manager'|'slack';
+/** Một nơi báo cáo có thể xuất hiện. id: 'eks' · 'manager' · 'project:<id>' · 'slack:<projectId>'. */
+export type Destination={id:string;kind:DestKind;label:string;hint:string;group:'Cá nhân'|'Dự án'|'Kênh Slack';projectId?:string;channel?:string;userId?:string};
+/** Kết quả gửi tới một nơi. `reportId` = bản báo cáo tại nơi đó (Slack không có, nội dung lưu ở `sections`). */
+export type Publication={id:string;originId:string;destId:string;kind:DestKind;label:string;reportId?:string;status:'SENT'|'FAILED';at:string;time:string;customized:boolean;sections?:Section[];title?:string};
+export type Data = {reports:Report[];contributions:Contribution[];users:User[];shares:Share[];comments:Comment[];publications:Publication[]};
 export const kindLabel = {weekly:'Báo cáo tuần',meeting:'Báo cáo cuộc họp',instant:'Báo cáo tức thời',checkin:'Báo cáo check-in'};
 export const today='2026-09-22';
 export const uid=()=>crypto.randomUUID();
@@ -120,7 +138,7 @@ export function seed():Data{return {reports:[
  contrib({id:'c-onboard',title:'Onboarding 6 team Game/App lên iGoal trong Pilot',impact:'4/6 team gửi báo cáo tuần đầu; MAU pilot 48%.',role:'Đóng góp chính',owner:'Nguyệt',date:'2026-09-19',relations:['igoal','kr2'],evidence:[{type:'Report',label:'Báo cáo tuần Kinh doanh · 15–19/09',value:'ua-w38'}],collaborators:['Dũng'],confirmationStatus:'NEED_MORE_INFO',note:'Bổ sung danh sách team đã gửi báo cáo và link recap Slack.'}),
  contrib({id:'c-visual',title:'Bộ visual onboarding iGoal và video hướng dẫn',impact:'Người dùng mới hiểu luồng báo cáo trong 2 phút; giảm câu hỏi lặp lại trên Slack.',role:'Chủ trì',owner:'Quý',date:'2026-09-18',relations:['igoal','ks2'],evidence:[{type:'Report',label:'Báo cáo tuần Creative · 15–19/09',value:'creative-w38'},{type:'File',label:'onboarding-visual-v3.fig',value:'onboarding-visual-v3.fig'}]}),
  contrib({id:'c-draft',title:'Chuẩn hóa mẫu biên bản họp cho dự án',impact:'',date:'2026-09-22',relations:['igoal','sprint1'],recordStatus:'DRAFT'}),
- ],users:people.map(u=>({...u})),shares:[
+ ],users:people.map(u=>({...u})),publications:[],shares:[
  // Lục (manager, không phải admin) được chia sẻ trực tiếp báo cáo tuần của Dũng và Pilot. Sprint Planning vừa trực tiếp vừa qua team BU Game → gỡ trực tiếp vẫn xem được.
  share('sh-prev-luc','previous','user','luc','dung','2026-09-16'),
  share('sh-pilot-luc','pilot-w1','user','luc','dung','2026-09-13'),

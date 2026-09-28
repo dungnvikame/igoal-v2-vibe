@@ -15,6 +15,7 @@ import {ReportDetail} from './ReportDetail';
 import {SimpleReport} from './Instant';
 import {MyEks} from './MyEks';
 import {GlobalSearch} from './GlobalSearch';
+import {PublishFlow} from './Publish';
 type Page='eks'|'project'|'shared';
 type EksTab='Mục tiêu & báo cáo'|'Contribution Log'|'Góp ý'|'Lịch sử thay đổi';
 
@@ -26,17 +27,20 @@ const REPORT_TYPES:{kind:Report['kind'];Icon:React.ElementType;text:string}[]=[
 ];
 
 export default function App(){
- const {data,reset,storageError,user,setUser,saveUser}=useStore();
- const [page,setPage]=useState<Page>('project'),[projectId,setProjectId]=useState<string|null>(null),[eksTab,setEksTab]=useState<EksTab>('Mục tiêu & báo cáo'),[editor,setEditor]=useState<Report|null>(null),[detail,setDetail]=useState<Report|null>(null),[create,setCreate]=useState(false),[contribution,setContribution]=useState<Contribution|null>(null),[source,setSource]=useState<string|null>(null),[settings,setSettings]=useState(false),[resetConfirm,setResetConfirm]=useState(false),[toast,setToast]=useState(''),[related,setRelated]=useState<string|null>(null);
+ const {data,reset,storageError,user,setUser,saveUser,saveReport}=useStore();
+ const [page,setPage]=useState<Page>('project'),[projectId,setProjectId]=useState<string|null>(null),[eksTab,setEksTab]=useState<EksTab>('Mục tiêu & báo cáo'),[editor,setEditor]=useState<Report|null>(null),[detail,setDetail]=useState<Report|null>(null),[create,setCreate]=useState(false),[contribution,setContribution]=useState<Contribution|null>(null),[source,setSource]=useState<string|null>(null),[settings,setSettings]=useState(false),[resetConfirm,setResetConfirm]=useState(false),[toast,setToast]=useState(''),[related,setRelated]=useState<string|null>(null),[publishing,setPublishing]=useState<Report|null>(null);
  const notify=(s:string)=>setToast(s);useEffect(()=>{if(!toast)return;const timer=setTimeout(()=>setToast(''),4000);return()=>clearTimeout(timer)},[toast]);
  // Ctrl K / ⌘K đưa con trỏ vào ô tìm kiếm trên topbar (đúng gợi ý phím tắt đang hiển thị).
  const searchRef=useRef<HTMLInputElement>(null);
  useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'&&searchRef.current){e.preventDefault();searchRef.current.focus();searchRef.current.select()}};document.addEventListener('keydown',onKey);return()=>document.removeEventListener('keydown',onKey)},[]);
- const go=(p:Page,pid:string|null=null)=>{setPage(p);setRelated(null);setProjectId(pid);setEditor(null);setDetail(null);window.scrollTo(0,0)};
+ const go=(p:Page,pid:string|null=null)=>{setPage(p);setPublishing(null);setRelated(null);setProjectId(pid);setEditor(null);setDetail(null);window.scrollTo(0,0)};
  const edit=(r:Report)=>{setEditor(r);setDetail(null);window.scrollTo(0,0)};
  const show=(r:Report)=>{setDetail(r);setEditor(null);window.scrollTo(0,0)};
  // Báo cáo trong dự án: gắn sẵn dự án đang mở. Báo cáo tuần cá nhân: mở lại nháp đang có thay vì tạo trùng.
  const inProject=page==='project'&&!!projectId;
+ // Xuất bản: lưu nháp (kèm nội dung riêng theo nơi) rồi mở màn chọn nơi xuất hiện. Quay lại soạn thì mở lại editor với nháp đó.
+ const startPublish=(r:Report)=>{const draft={...r,status:'DRAFT' as const};saveReport(draft);setEditor(null);setPublishing(draft);window.scrollTo(0,0)};
+ const backToEditor=(r:Report)=>{saveReport(r);setPublishing(null);edit(r)};
  const choose=(kind:Report['kind'])=>{setCreate(false);edit(inProject?blankReport(kind,'project',projectId!):kind==='weekly'?currentWeekly(data.reports):blankReport(kind,'personal'))};
  const me=data.users.find(p=>p.id===user);
  // Số báo cáo mới được chia sẻ trong 7 ngày, hiện cạnh mục sidebar.
@@ -44,11 +48,12 @@ export default function App(){
  const projectName=projects.find(p=>p.id===projectId)?.label;
 
  // Editor và chi tiết báo cáo là trang full-screen (ẩn sidebar/topbar) giống iGoal thật.
- const fullPage=editor?(editor.kind==='weekly'?<Weekly key={editor.id} initial={editor} close={()=>setEditor(null)} source={setSource} contribute={setContribution} notify={notify}/>
+ const fullPage=editor?(editor.kind==='weekly'?<Weekly key={editor.id} initial={editor} close={()=>setEditor(null)} source={setSource} notify={notify} publish={startPublish}/>
   :editor.kind==='meeting'?<Meeting key={editor.id} initial={editor} source={setSource} close={()=>setEditor(null)} done={id=>{setEditor(null);const r=data.reports.find(r=>r.id===id);if(r)setDetail(r)}} notify={notify}/>
   :editor.kind==='checkin'?<CheckinReport key={editor.id} initial={editor} close={()=>setEditor(null)} source={setSource} notify={notify}/>
-  :<SimpleReport key={editor.id} initial={editor} close={()=>setEditor(null)} source={setSource} notify={notify}/>)
-  :detail?<ReportDetail report={detail} close={()=>setDetail(null)} source={setSource} contribute={setContribution} notify={notify}/>:null;
+  :<SimpleReport key={editor.id} initial={editor} close={()=>setEditor(null)} source={setSource} notify={notify} publish={startPublish}/>)
+  :detail?<ReportDetail key={detail.id} report={detail} close={()=>setDetail(null)} source={setSource} contribute={setContribution} notify={notify} openReport={show}/>
+  :publishing?<PublishFlow key={publishing.id} report={publishing} back={backToEditor} close={()=>setPublishing(null)} openReport={show} notify={notify}/>:null;
 
  const overlays=<>
   {create&&<Modal title="Tạo báo cáo mới" close={()=>setCreate(false)} footer={<Button onClick={()=>setCreate(false)}>Hủy</Button>}>

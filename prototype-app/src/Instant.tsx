@@ -13,7 +13,7 @@ const PLACEHOLDER:Record<string,string>={[SEC_RESULT]:'Có gì mới cần mọi
 const TARGET=(k:Suggestion['kind'])=>k==='plan'?SEC_PLAN:k==='issue'?SEC_ISSUE:SEC_RESULT;
 
 /** Editor báo cáo tức thời: meta trên cùng, 3 mục, panel phải "Lấy từ báo cáo" (2 bước) và "Báo cáo cũ". */
-export function SimpleReport({initial,close,source,notify}:{initial:Report;close:()=>void;source:(id:string)=>void;notify:(s:string)=>void}){
+export function SimpleReport({initial,close,source,notify,publish}:{initial:Report;close:()=>void;source:(id:string)=>void;notify:(s:string)=>void;publish:(r:Report)=>void}){
  const {data,saveReport}=useStore();
  const isProject=initial.scope==='project';const projectId=isProject?initial.relations[0]:undefined;
  const [base]=useState<Report>(()=>({...initial,sections:initial.sections.length?initial.sections:[section(SEC_RESULT,''),section(SEC_ISSUE,''),section(SEC_PLAN,'')]}));
@@ -36,7 +36,7 @@ export function SimpleReport({initial,close,source,notify}:{initial:Report;close
   {key:'old',label:'Báo cáo cũ',icon:<ClockCounterClockwise/>,render:()=><OldReportsPanel ids={oldIds} open={source}/>},
  ];
  return <EditorFrame back={()=>dirty?setLeaving(true):close()} panels={panels} panel={panel} onPanel={setPanel}
-  actions={<><SaveState dirty={dirty}/>{options.length>0&&<Button quiet className={panel==='suggest'?'active-filter':''} onClick={()=>setPanel(panel==='suggest'?'old':'suggest')}><Sparkle/> Lấy từ báo cáo</Button>}<Button onClick={()=>save('DRAFT')}><FloppyDisk/> Lưu nháp</Button><Button primary disabled={!r.title.trim()||!r.sections.some(s=>s.text.trim())} onClick={()=>save('PUBLISHED')}><PaperPlaneTilt/> Gửi báo cáo</Button></>}>
+  actions={<><SaveState dirty={dirty}/>{options.length>0&&<Button quiet className={panel==='suggest'?'active-filter':''} onClick={()=>setPanel(panel==='suggest'?'old':'suggest')}><Sparkle/> Lấy từ báo cáo</Button>}<Button onClick={()=>save('DRAFT')}><FloppyDisk/> Lưu nháp</Button><Button primary disabled={!r.title.trim()||!r.sections.some(s=>s.text.trim())} onClick={()=>publish(r)}><PaperPlaneTilt/> Xuất bản</Button></>}>
   <input className="title-input" aria-label="Tên báo cáo" value={r.title} onChange={e=>patch({title:e.target.value})}/>
   <MetaRow label="Quản lý trực tiếp"><UserChip/></MetaRow>
   <MetaRow label="Loại báo cáo"><TrackSelect value={r.track} onChange={t=>patch({track:t})}/></MetaRow>

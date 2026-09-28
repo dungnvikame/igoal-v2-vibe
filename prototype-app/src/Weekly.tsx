@@ -1,6 +1,6 @@
 import React,{useState} from 'react';
 import {Sparkle,FloppyDisk,PaperPlaneTilt,ClockCounterClockwise,CheckCircle} from 'phosphor-react';
-import {Report,Contribution,entities,previousWeekly,carryItems,weeklySuggestions,SuggestCtx,Suggestion,blankContribution,section} from './model';
+import {Report,entities,previousWeekly,carryItems,weeklySuggestions,SuggestCtx,Suggestion,section} from './model';
 import {useStore} from './store';
 import {TrackSelect} from './Project';
 import {Button,SourceButton,EntityRelationPicker,Badge,ReportBody,LeaveDialog,EditorFrame,EditorPanel,OldReportsPanel,UserChip,MetaRow,AutoTextarea,SaveState,nowTime} from './ui';
@@ -20,13 +20,13 @@ const TARGET:Record<Suggestion['kind'],string>={result:SEC_RESULT,decision:SEC_R
  * AI là panel "Lấy từ báo cáo" ở cột phải, 2 bước: chọn báo cáo nguồn → chọn dòng (đã chia sẵn theo mục đích đến) → chèn.
  * Member: nguồn là báo cáo dự án tuần này + báo cáo tuần trước của chính mình. PM: báo cáo tuần của member + check-in.
  */
-export function Weekly({initial,close,source,contribute,notify}:{initial:Report;close:()=>void;source:(id:string)=>void;contribute:(c:Contribution)=>void;notify:(s:string)=>void}){
+export function Weekly({initial,close,source,notify,publish}:{initial:Report;close:()=>void;source:(id:string)=>void;notify:(s:string)=>void;publish:(r:Report)=>void}){
  const {data,saveReport}=useStore();
  const isPM=initial.scope==='project';const projectId=isPM?initial.relations[0]:undefined;
  // Member: EKS của chính mình gắn sẵn (gỡ bằng ×). PM: dự án đang mở đã gắn và khóa.
  const [base]=useState<Report>(()=>{const sections=initial.sections.length?initial.sections:TEMPLATE();const relations=isPM||initial.relations.length?initial.relations:entities.filter(e=>e.type==='EKS').map(e=>e.id);return {...initial,sections,relations}});
  const [r,setR]=useState<Report>(base);
- const [saved,setSaved]=useState(false),[savedAt,setSavedAt]=useState(''),[dismissed,setDismissed]=useState<number[]>([]),[leaving,setLeaving]=useState(false),[panel,setPanel]=useState<string|null>('old'),[added,setAdded]=useState<string[]>([]);
+ const [saved,setSaved]=useState(false),[savedAt,setSavedAt]=useState(''),[leaving,setLeaving]=useState(false),[panel,setPanel]=useState<string|null>('old'),[added,setAdded]=useState<string[]>([]);
  const ctx:SuggestCtx=isPM?{scope:'project',projectId:projectId!}:{scope:'personal'};
  const prev=previousWeekly(data.reports,r.id,initial.scope,projectId,isPM?undefined:initial.owner);const carry=carryItems(prev);
  const suggestions=weeklySuggestions(data.reports,WEEK_FROM,ctx);
@@ -49,13 +49,12 @@ export function Weekly({initial,close,source,contribute,notify}:{initial:Report;
   setR(x=>({...x,relations:proj&&!isPM&&!x.relations.includes(proj)?[...x.relations,proj]:x.relations,sections:x.sections.map(s=>s.label===label?{...s,text:(s.text.trim()?s.text.replace(/\s+$/,'')+'\n':'')+'• '+text,sources:[...new Set([...s.sources,sourceId])]}:s)}));
   setSaved(false);setAdded(a=>[...a,...addedKeys(key)]);
  };
- const save=(publish=false)=>{const next={...r,status:publish?'PUBLISHED' as const:'DRAFT' as const};saveReport(next);setR(next);setSaved(true);setSavedAt(nowTime());notify(publish?'Đã gửi báo cáo tuần':'Đã lưu bản nháp')};
+ const save=()=>{const next={...r,status:'DRAFT' as const};saveReport(next);setR(next);setSaved(true);setSavedAt(nowTime());notify('Đã lưu bản nháp')};
  const leave=()=>dirty?setLeaving(true):close();
- const recorded=(i:number)=>data.contributions.some(c=>c.title===blankContribution(r,i).title&&c.evidence.some(e=>e.value===r.id));
 
  if(r.status==='PUBLISHED')return <EditorFrame back={close} backLabel="Về danh sách" actions={<Badge tone="success">Đã gửi</Badge>}>
   <h1 className="doc-title">{r.title}</h1>
-  <div className="two-column"><article className="reading"><ReportBody report={r} open={source}/></article><aside className="stack">{[0,1].filter(i=>!dismissed.includes(i)).map(i=>{const s=blankContribution(r,i);const done=recorded(i);return <div className="surface suggestion" key={i}><Badge tone={done?'success':'ai'}>{done?'Đã ghi nhận':'Có thể là Contribution'}</Badge><h3>{s.title}</h3>{!done&&<div className="row"><Button quiet onClick={()=>setDismissed([...dismissed,i])}>Bỏ qua</Button><Button onClick={()=>contribute(s)}>Ghi nhận</Button></div>}</div>})}</aside></div>
+  <article className="reading"><ReportBody report={r} open={source}/></article>
  </EditorFrame>;
 
  const panels:EditorPanel[]=[
@@ -63,7 +62,7 @@ export function Weekly({initial,close,source,contribute,notify}:{initial:Report;
   {key:'old',label:'Báo cáo cũ',icon:<ClockCounterClockwise/>,render:()=><OldReportsPanel ids={oldIds} open={source}/>},
  ];
  return <EditorFrame back={leave} panels={panels} panel={panel} onPanel={setPanel} onSave={()=>save()}
-  actions={<><SaveState dirty={dirty} savedAt={saved?savedAt:undefined}/>{total>0&&<Button quiet className={panel==='suggest'?'active-filter':''} onClick={()=>setPanel(panel==='suggest'?'old':'suggest')}><Sparkle/> Lấy từ báo cáo</Button>}<Button onClick={()=>save()} title="Lưu nháp (Ctrl S)"><FloppyDisk/> Lưu nháp</Button><Button primary disabled={!r.title.trim()||!hasText} title={!r.title.trim()?'Đặt tên báo cáo để gửi':!hasText?'Viết ít nhất một mục để gửi':undefined} onClick={()=>save(true)}><PaperPlaneTilt/> Gửi báo cáo</Button></>}>
+  actions={<><SaveState dirty={dirty} savedAt={saved?savedAt:undefined}/>{total>0&&<Button quiet className={panel==='suggest'?'active-filter':''} onClick={()=>setPanel(panel==='suggest'?'old':'suggest')}><Sparkle/> Lấy từ báo cáo</Button>}<Button onClick={()=>save()} title="Lưu nháp (Ctrl S)"><FloppyDisk/> Lưu nháp</Button><Button primary disabled={!r.title.trim()||!hasText} title={!r.title.trim()?'Đặt tên báo cáo để gửi':!hasText?'Viết ít nhất một mục để gửi':undefined} onClick={()=>publish(r)}><PaperPlaneTilt/> Xuất bản</Button></>}>
   <input className="title-input" aria-label="Tên báo cáo" value={r.title} onChange={e=>patch({title:e.target.value})}/>
   <MetaRow label="Quản lý trực tiếp"><UserChip/></MetaRow>
   <MetaRow label="Loại báo cáo"><TrackSelect value={r.track} onChange={t=>patch({track:t})}/></MetaRow>
