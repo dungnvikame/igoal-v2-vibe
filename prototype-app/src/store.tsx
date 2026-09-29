@@ -3,7 +3,7 @@ import {Data,Report,Contribution,Share,Comment,User,Publication,Eks,seed as seed
 import {ProjectConfig,seedProjects,syncProjects} from './project-config';
 const seed=():Data=>({...seedBase(),projects:seedProjects()});
 // Đổi hậu tố khi seed thay đổi để trình duyệt tự nhận dữ liệu mới.
-const key='igoal-reporting-v2-demo-2026-r11';
+const key='igoal-reporting-v2-demo-2026-r12';
 /** Mở drawer "Liên quan" theo entity id từ bất kỳ đâu (chip relation, dòng OKR). Null khi không cung cấp. */
 export const RelatedContext=createContext<((id:string)=>void)|null>(null);
 /** Mục tiêu đang mở ở panel phải của trang, để tô sáng dòng tương ứng. */

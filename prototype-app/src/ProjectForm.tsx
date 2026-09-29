@@ -1,9 +1,9 @@
 import React,{useState} from 'react';
-import {Plus,X,Check,CheckCircle,ArrowLeft,Hash,Info,Flag,Target} from 'phosphor-react';
-import {tracks,Track,teams,teamGoals,entities} from './model';
+import {Plus,X,Check,CheckCircle,ArrowLeft,Hash,Info,Flag,Target,WarningCircle} from 'phosphor-react';
+import {tracks,Track,teams,teamGoals,entities,entityAdmins,daysAgo,dateLabel,relativeDate} from './model';
 import {useStore} from './store';
 import {Button,Modal,AutoTextarea} from './ui';
-import {ProjectConfig,RoleId,ProjectOkr,projectTypes,platforms,units,unitTeams,roles,viewerGroups,cadences,stageTemplate,blankProject,newMilestone,newOkr,currentPeriod} from './project-config';
+import {ProjectConfig,RoleId,ProjectOkr,Stage,Phase,Req,projectTypes,platforms,units,unitTeams,roles,viewerGroups,cadences,cadenceDays,stageTemplate,applyFlagship,blankProject,newMilestone,newOkr,currentPeriod,reporters,reqLabel,phases,activeTracks} from './project-config';
 import {teamName} from './Alignment';
 import {MemberSearch} from './MemberSearch';
 import {uid} from './model';
@@ -39,7 +39,8 @@ export function ProjectForm({initial,close,done,notify}:{initial?:ProjectConfig;
  const valid=[!!p.name.trim()&&!!p.start&&(!p.end||p.end>=p.start)&&p.roles.PM.length>0&&!!p.unit,true,true,p.stages.length>0&&p.stages.every(s=>s.name.trim()),true];
  const firstInvalid=valid.findIndex(v=>!v);
  // Đổi phân loại khi tạo mới → thay giai đoạn mẫu cho khớp (Game/App khác Sản phẩm nội bộ).
- const setSub=(subType:string)=>set({subType,...(!editing?{stages:stageTemplate(subType),currentStage:''}:{})});
+ const setSub=(subType:string)=>upd(v=>({subType,...(!editing?{stages:stageTemplate(subType,v.flagship),currentStage:''}:{})}));
+ const setFlagship=(flagship:boolean)=>upd(v=>({flagship,stages:applyFlagship(v.stages,flagship)}));
  const setType=(type:ProjectConfig['type'])=>{const sub=projectTypes.find(t=>t.id===type)!.subs[0];set({type});setSub(sub)};
  const setRole=(r:RoleId,ids:string[])=>upd(v=>({roles:{...v.roles,[r]:ids}}));
  const setUnit=(unit:string)=>upd(v=>({unit,team:unitTeams[unit]?.[0]??'',partners:v.partners.filter(x=>x!==unit)}));
@@ -58,6 +59,7 @@ export function ProjectForm({initial,close,done,notify}:{initial?:ProjectConfig;
   <Field label="Mô tả"><AutoTextarea className="eks-input" rows={2} placeholder="Dự án làm gì, cho ai" value={p.description} onChange={e=>set({description:e.target.value})}/></Field>
   <Field label="Loại dự án"><Pills options={projectTypes} value={[p.type]} onChange={v=>setType(v[0])}/></Field>
   <Field label="Phân loại"><Pills options={subs.map(s=>({id:s,label:s}))} value={[p.subType]} onChange={v=>setSub(v[0])}/></Field>
+  <Field label="Dự án chủ lực" isNew hint={p.flagship?"Đủ nguồn lực mọi đầu: ở giai đoạn Maturity, Product / UA / Creative vẫn báo cáo hằng tuần.":"Không chủ lực: ở giai đoạn Maturity chỉ còn UA vận hành, báo cáo khi có cập nhật."}><label className="pf-switch"><input type="checkbox" checked={p.flagship} onChange={e=>setFlagship(e.target.checked)}/><span/>{p.flagship?"Có":"Không"}</label></Field>
   <Field label="Nền tảng" isNew><Pills multi options={platforms.map(x=>({id:x,label:x}))} value={p.platforms} onChange={v=>set({platforms:v})}/></Field>
   <Field label="Product Manager" required><MemberSearch single label="Product Manager" placeholder="Tìm Product Manager" users={users} value={p.roles.PM} onChange={v=>setRole('PM',v)}/></Field>
   <Field label="Đơn vị phụ trách" required><select className="eks-select wide" aria-label="Đơn vị phụ trách" value={p.unit} onChange={e=>setUnit(e.target.value)}>{units.map(u=><option key={u}>{u}</option>)}</select></Field>
@@ -93,17 +95,24 @@ export function ProjectForm({initial,close,done,notify}:{initial?:ProjectConfig;
   <Button onClick={()=>upd(v=>({okrs:[...v.okrs,newOkr()]}))}><Plus/> Thêm mục tiêu</Button>
  </>;
 
+ // Ma trận Giai đoạn × Đầu báo cáo (Product / UA / Creative) + tần suất, gom theo pha: Phát triển sản phẩm → Vận hành → Tạm dừng.
+ const addStage=(phase:Phase)=>upd(v=>{const s:Stage={id:uid(),name:'',phase,start:'',req:{'Sản phẩm':phase==='dev'?'required':'optional','Kinh doanh':phase==='ops'?'required':'none','Creative':'optional'},cadence:'1 tuần/lần'};const i=v.stages.map(x=>x.phase).lastIndexOf(phase);return {stages:i<0?[...v.stages,s]:[...v.stages.slice(0,i+1),s,...v.stages.slice(i+1)]}});
+ const isApp=p.subType==='Game'||p.subType==='App';
  const stages=<>
-  <p className="hint pf-intro-top"><Info/> Mỗi giai đoạn quyết định mảng báo cáo cần viết và tần suất. {p.subType==='Game'||p.subType==='App'?'Game/App: giai đoạn build chủ yếu báo cáo Sản phẩm, sau release chuyển sang Kinh doanh/UA.':'Có thể đổi tên, thêm hoặc bớt giai đoạn.'}</p>
-  <section className="eks-card flush">{p.stages.map((s,i)=><div className={'pf-stage'+(current===s.id?' current':'')} key={s.id}>
-   <div className="pf-stage-head"><label className="pf-now" title="Giai đoạn hiện tại"><input type="radio" name="current-stage" checked={current===s.id} onChange={()=>set({currentStage:s.id})}/>{current===s.id?'Hiện tại':''}</label>
-    <input className="pf-stage-name" aria-label={'Tên giai đoạn '+(i+1)} value={s.name} placeholder="Tên giai đoạn" onChange={e=>patchStage(s.id,{name:e.target.value})}/>
-    <input type="date" className="eks-select" aria-label={'Bắt đầu giai đoạn '+(s.name||i+1)} value={s.start} onChange={e=>patchStage(s.id,{start:e.target.value})}/>
-    {p.stages.length>1&&<button className="pf-x" aria-label={'Xóa giai đoạn '+s.name} onClick={()=>upd(v=>({stages:v.stages.filter(x=>x.id!==s.id),currentStage:current===s.id?'':v.currentStage}))}><X size={14}/></button>}</div>
-   <div className="pf-stage-body"><span className="pf-sub">Báo cáo</span><Pills multi options={tracks.map(t=>({id:t,label:t}))} value={s.tracks} onChange={v=>patchStage(s.id,{tracks:v})}/>
-    <select className="eks-select small" aria-label={'Tần suất '+s.name} value={s.cadence} onChange={e=>patchStage(s.id,{cadence:e.target.value})}>{cadences.map(c=><option key={c}>{c}</option>)}</select></div>
-   {!s.tracks.length&&<small className="hint">Giai đoạn này không yêu cầu báo cáo dự án</small>}</div>)}</section>
-  <Button onClick={()=>upd(v=>({stages:[...v.stages,{id:uid(),name:'',start:'',tracks:['Sản phẩm'],cadence:'1 tuần/lần'}]}))}><Plus/> Thêm giai đoạn</Button>
+  <p className="hint pf-intro-top"><Info/><span>Mỗi giai đoạn quy định <b>ai phải báo cáo</b> và <b>bao lâu một lần</b>. {isApp?'Mẫu cho Game/App: Prototype → Soft Launch (Product báo cáo chính) → Global Launch → Maturity (UA báo cáo chính) → Pend.':'Có thể đổi tên, thêm hoặc bớt giai đoạn.'}</span></p>
+  <div className="pf-legend"><span className="rq required">Bắt buộc</span> phải gửi theo tần suất, quá hạn bị tính thiếu <span className="rq optional">Tùy chọn</span> gửi khi cần <span className="rq none">Không cần</span></div>
+  <section className="eks-card flush"><table className="pf-stages"><thead><tr><th className="c-now">Hiện tại</th><th>Giai đoạn</th>{reporters.map(r=><th key={r.track}>{r.label}</th>)}<th>Tần suất</th><th/></tr></thead>
+   {phases.map(ph=>{const list=p.stages.filter(s=>s.phase===ph.id);if(!list.length&&ph.id==='pause')return null;return <tbody key={ph.id}>
+    <tr className="pf-phase"><td colSpan={reporters.length+4}><strong>{ph.label}</strong><small>{ph.hint}</small><button className="text-button" onClick={()=>addStage(ph.id)}><Plus size={12}/> Thêm</button></td></tr>
+    {list.map(s=><tr key={s.id} className={current===s.id?'current':''}>
+     <td className="c-now"><input type="radio" name="current-stage" aria-label={'Giai đoạn hiện tại: '+s.name} checked={current===s.id} onChange={()=>set({currentStage:s.id})}/></td>
+     <td className="c-name"><input className="pf-stage-name" aria-label="Tên giai đoạn" value={s.name} placeholder="Tên giai đoạn" onChange={e=>patchStage(s.id,{name:e.target.value})}/><input type="date" className="pf-stage-date" aria-label={'Bắt đầu '+s.name} value={s.start} onChange={e=>patchStage(s.id,{start:e.target.value})}/></td>
+     {reporters.map(r=><td key={r.track}><select className={'rq-select rq '+s.req[r.track]} aria-label={`${r.label} báo cáo ở ${s.name}`} value={s.req[r.track]} onChange={e=>patchStage(s.id,{req:{...s.req,[r.track]:e.target.value as Req}})}>{(Object.keys(reqLabel) as Req[]).map(k=><option key={k} value={k}>{reqLabel[k]}</option>)}</select></td>)}
+     <td><select className="eks-select small" aria-label={'Tần suất '+s.name} value={s.cadence} disabled={!activeTracks(s).length} onChange={e=>patchStage(s.id,{cadence:e.target.value})}>{cadences.map(c=><option key={c}>{c}</option>)}</select></td>
+     <td>{p.stages.length>1&&<button className="pf-x" aria-label={'Xóa giai đoạn '+s.name} onClick={()=>upd(v=>({stages:v.stages.filter(x=>x.id!==s.id),currentStage:current===s.id?'':v.currentStage}))}><X size={14}/></button>}</td>
+    </tr>)}</tbody>})}
+  </table></section>
+  {isApp&&p.stages.some(s=>s.key==='maturity')&&<p className="hint">Maturity đang theo mẫu <b>{p.flagship?'dự án chủ lực':'dự án không chủ lực'}</b>: {p.flagship?'mọi đầu báo cáo hằng tuần.':'chỉ UA vận hành, báo cáo khi có cập nhật để dự án không bị thả trôi.'} Đổi ở "Dự án chủ lực" (bước 1).</p>}
  </>;
 
  const krs=teamGoals.filter(g=>g.parent);
@@ -135,12 +144,29 @@ export function ProjectForm({initial,close,done,notify}:{initial?:ProjectConfig;
  </Modal>;
 }
 
+
 const fmt=(s:string)=>s?s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4):'';
-/** Dòng tóm tắt trên đầu trang dự án: loại · nền tảng · thời gian · giai đoạn hiện tại + mảng báo cáo đang yêu cầu. */
+const reqText=(s:Stage)=>{const a=activeTracks(s);return a.length?a.map(r=>r.label+(s.req[r.track]==='optional'?' (tùy chọn)':'')).join(', ')+' · '+s.cadence:'Không yêu cầu báo cáo'};
+/**
+ * Tình trạng báo cáo của từng đầu trong giai đoạn hiện tại: dựa vào báo cáo dự án đã gửi gần nhất theo "Loại báo cáo" (mảng).
+ * Bắt buộc + quá một kỳ (theo tần suất) → "Thiếu"; tùy chọn → chỉ hiện lần gửi gần nhất. Giúp PM / BU Head thấy đầu nào đang thiếu báo cáo.
+ */
+function ReportStatus({cfg,stage}:{cfg:ProjectConfig;stage:Stage}){
+ const {data}=useStore();const days=cadenceDays(stage.cadence);
+ const last=(t:Track)=>data.reports.filter(r=>r.scope==='project'&&r.status==='PUBLISHED'&&r.relations.includes(cfg.id)&&(r.track??'Sản phẩm')===t).sort((a,b)=>b.date.localeCompare(a.date))[0];
+ const list=activeTracks(stage);if(!list.length)return <span className="pf-rs muted">Giai đoạn tạm dừng · không yêu cầu báo cáo</span>;
+ return <>{list.map(r=>{const l=last(r.track);const req=stage.req[r.track];const late=req==='required'&&days!==null&&(!l||daysAgo(l.date)>=days);
+  return <span key={r.track} className={'pf-rs '+(late?'late':req==='required'?'ok':'muted')} title={l?`${l.title} · ${dateLabel(l.date)}`:'Chưa có báo cáo'}>{late?<WarningCircle weight="fill"/>:req==='required'?<CheckCircle weight="fill"/>:null}<b>{r.label}</b>{l?relativeDate(l.date).toLowerCase():'chưa có báo cáo'}{late&&' · thiếu'}{req==='optional'&&' · tùy chọn'}</span>})}</>;
+}
+/** Dòng tóm tắt trên đầu trang dự án: loại · chủ lực · nền tảng · thời gian; giai đoạn hiện tại (PM đổi nhanh) + ai phải báo cáo, tình trạng báo cáo. */
 export function ProjectStrip({cfg}:{cfg:ProjectConfig}){
- const s=cfg.stages.find(x=>x.id===cfg.currentStage)??cfg.stages[0];
- return <div className="pf-strip"><span>{projectTypes.find(t=>t.id===cfg.type)?.label} · {cfg.subType}</span>{cfg.platforms.length>0&&<><i>·</i><span>{cfg.platforms.join(', ')}</span></>}<i>·</i><span>{fmt(cfg.start)} – {cfg.end?fmt(cfg.end):'Dài hạn'}</span>
-  {s&&<span className="pf-stage-chip" title={'Giai đoạn hiện tại · '+s.cadence}>Giai đoạn: <b>{s.name}</b>{s.tracks.length?<> · Báo cáo {s.tracks.join(', ')} · {s.cadence}</>:' · Không yêu cầu báo cáo'}</span>}</div>;
+ const {user,saveProject}=useStore();const s=cfg.stages.find(x=>x.id===cfg.currentStage)??cfg.stages[0];
+ const canEdit=entityAdmins[cfg.id]?.includes(user);
+ return <div className="pf-strip-wrap"><div className="pf-strip"><span>{projectTypes.find(t=>t.id===cfg.type)?.label} · {cfg.subType}</span>{cfg.flagship&&<span className="pf-flag">Chủ lực</span>}{cfg.platforms.length>0&&<><i>·</i><span>{cfg.platforms.join(', ')}</span></>}<i>·</i><span>{fmt(cfg.start)} – {cfg.end?fmt(cfg.end):'Dài hạn'}</span></div>
+  {s&&<div className="pf-stage-bar"><span className="pf-stage-label">Giai đoạn</span>
+   {canEdit?<select className="pf-stage-pick" aria-label="Giai đoạn hiện tại" value={s.id} onChange={e=>saveProject({...cfg,currentStage:e.target.value})}>{phases.map(ph=>{const l=cfg.stages.filter(x=>x.phase===ph.id);return l.length?<optgroup key={ph.id} label={ph.label}>{l.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</optgroup>:null})}</select>:<b>{s.name}</b>}
+   <small>{phases.find(p=>p.id===s.phase)?.label} · {reqText(s)}</small><span className="pf-rs-list"><ReportStatus cfg={cfg} stage={s}/></span></div>}
+ </div>;
 }
 /** Tab "Quản lý dự án": xem cấu hình (nhân sự, giai đoạn, OKR team, Slack, quyền xem) + nút Chỉnh sửa mở lại ProjectForm. */
 export function ProjectSettings({cfg,edit}:{cfg:ProjectConfig;edit:()=>void}){
@@ -149,9 +175,13 @@ export function ProjectSettings({cfg,edit}:{cfg:ProjectConfig;edit:()=>void}){
  return <section className="surface document pf-settings"><div className="row between"><h2>Quản lý dự án</h2><Button onClick={edit}>Chỉnh sửa</Button></div>
   <div className="pf-grid">
    <div><h3>Nhân sự & vai trò</h3><dl>{roles.map(r=><React.Fragment key={r.id}><dt>{r.label}</dt><dd>{who(cfg.roles[r.id])}</dd></React.Fragment>)}</dl></div>
-   <div><h3>Thông tin</h3><dl><dt>Đơn vị</dt><dd>{cfg.unit}</dd><dt>Team</dt><dd>{cfg.team||"—"}</dd><dt>Phối hợp</dt><dd>{cfg.partners?.join(", ")||"—"}</dd><dt>Thời gian</dt><dd>{fmt(cfg.start)} – {cfg.end?fmt(cfg.end):'Dài hạn, xuyên kỳ'}</dd><dt>Nền tảng</dt><dd>{cfg.platforms.join(', ')||'—'}</dd><dt>Slack</dt><dd>{cfg.channel||'Không gửi recap'}</dd></dl></div>
+   <div><h3>Thông tin</h3><dl><dt>Loại</dt><dd>{projectTypes.find(t=>t.id===cfg.type)?.label} · {cfg.subType}{cfg.flagship?' · Chủ lực':''}</dd><dt>Đơn vị</dt><dd>{cfg.unit}</dd><dt>Team</dt><dd>{cfg.team||"—"}</dd><dt>Phối hợp</dt><dd>{cfg.partners?.join(", ")||"—"}</dd><dt>Thời gian</dt><dd>{fmt(cfg.start)} – {cfg.end?fmt(cfg.end):'Dài hạn, xuyên kỳ'}</dd><dt>Nền tảng</dt><dd>{cfg.platforms.join(', ')||'—'}</dd><dt>Slack</dt><dd>{cfg.channel||'Không gửi recap'}</dd></dl></div>
   </div>
-  <h3>Giai đoạn & báo cáo</h3><ol className="pf-timeline">{cfg.stages.map(s=><li key={s.id} className={s.id===cur?'current':''}><strong>{s.name}</strong>{s.start&&<small>{fmt(s.start)}</small>}<span>{s.tracks.length?s.tracks.join(', ')+' · '+s.cadence:'Không yêu cầu báo cáo'}</span></li>)}</ol>
+  <h3>Giai đoạn & báo cáo</h3>
+  <div className="pf-matrix-wrap flush"><table className="pf-stages readonly"><thead><tr><th>Giai đoạn</th>{reporters.map(r=><th key={r.track}>{r.label}</th>)}<th>Tần suất</th></tr></thead>
+   {phases.map(ph=>{const l=cfg.stages.filter(s=>s.phase===ph.id);return l.length?<tbody key={ph.id}><tr className="pf-phase"><td colSpan={reporters.length+2}><strong>{ph.label}</strong><small>{ph.hint}</small></td></tr>
+    {l.map(s=><tr key={s.id} className={s.id===cur?'current':''}><td className="c-name"><strong>{s.name}</strong>{s.id===cur&&<span className="pf-now-tag">Hiện tại</span>}{s.start&&<small>{fmt(s.start)}</small>}</td>{reporters.map(r=><td key={r.track}><span className={'rq '+s.req[r.track]}>{reqLabel[s.req[r.track]]}</span></td>)}<td>{activeTracks(s).length?s.cadence:'—'}</td></tr>)}</tbody>:null})}
+  </table></div>
   <h3>Đóng góp OKR BU / Team</h3><p>{cfg.teamGoals.length?teamGoals.filter(g=>cfg.teamGoals.includes(g.id)).map(g=><span className="pf-kr" key={g.id} title={g.label}><b>{g.code}</b> {g.label}</span>):<span className="hint">Chưa liên kết</span>}</p>
   <h3>Quyền xem báo cáo</h3><div className="pf-matrix-wrap"><table className="pf-matrix readonly"><thead><tr><th>Mảng</th>{viewerGroups.map(g=><th key={g.id}>{g.label}</th>)}</tr></thead><tbody>{tracks.map(t=><tr key={t}><th>{t}</th>{viewerGroups.map(g=><td key={g.id}>{cfg.visibility[t].includes(g.id)?<Check size={14} aria-label="Được xem"/>:<span className="hint" aria-label="Không">—</span>}</td>)}</tr>)}</tbody></table></div>
  </section>;
