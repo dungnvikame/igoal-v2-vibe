@@ -3,12 +3,13 @@ import {Plus,X,Check,CheckCircle,ArrowLeft,Hash,Info,Flag,Target,WarningCircle} 
 import {tracks,Track,teams,teamGoals,entities,entityAdmins,daysAgo,dateLabel,relativeDate} from './model';
 import {useStore} from './store';
 import {Button,Modal,AutoTextarea} from './ui';
-import {ProjectConfig,RoleId,ProjectOkr,Stage,Phase,Req,projectTypes,platforms,units,unitTeams,roles,viewerGroups,cadences,cadenceDays,stageTemplate,applyFlagship,blankProject,newMilestone,newOkr,currentPeriod,reporters,reqLabel,phases,activeTracks} from './project-config';
+import {ProjectConfig,RoleId,ProjectOkr,roleLabel,Stage,Phase,Req,projectTypes,platforms,units,unitTeams,roles,viewerGroups,cadences,cadenceDays,stageTemplate,applyFlagship,blankProject,newMilestone,newOkr,currentPeriod,reporters,reqLabel,phases,activeTracks} from './project-config';
 import {teamName} from './Alignment';
 import {MemberSearch} from './MemberSearch';
+import {MemberRoles} from './MemberRoles';
 import {uid} from './model';
 
-const STEPS=['Thông tin chung','Thành viên','OKR dự án','Giai đoạn & báo cáo','Liên kết & quyền xem'] as const;
+const STEPS=['Thông tin chung','Thành viên','OKR dự án','Giai đoạn & báo cáo','Slack & quyền xem'] as const;
 /** Nhãn "Mới" đánh dấu phần iGoal hiện tại chưa có, để review biết chỗ nào là bổ sung. */
 const New=()=><span className="pf-new" title="Chưa có trên iGoal hiện tại">Mới</span>;
 function Field({label,children,isNew,hint,required}:{label:string;children:React.ReactNode;isNew?:boolean;hint?:string;required?:boolean}){return <div className="pf-field"><span className="pf-label">{label}{required&&<i className="req">*</i>}{isNew&&<New/>}</span><div>{children}{hint&&<small className="hint pf-hint">{hint}</small>}</div></div>}
@@ -30,13 +31,13 @@ function Pills<T extends string>({options,value,onChange,multi}:{options:readonl
 export function ProjectForm({initial,close,done,notify}:{initial?:ProjectConfig;close:()=>void;done:(id:string)=>void;notify:(s:string)=>void}){
  const {data,saveProject}=useStore();const editing=!!initial;
  const [p,setP]=useState<ProjectConfig>(()=>initial?{...initial,partners:initial.partners??[],okrs:initial.okrs??[]}:blankProject());
- const [step,setStep]=useState(0);
+ const [step,setStep]=useState(0),[pending,setPending]=useState<string[]>([]);
  const set=(x:Partial<ProjectConfig>)=>setP(v=>({...v,...x}));
  // Cập nhật theo giá trị mới nhất (bấm nhanh nhiều lần không mất thay đổi).
  const upd=(f:(v:ProjectConfig)=>Partial<ProjectConfig>)=>setP(v=>({...v,...f(v)}));
  const subs=projectTypes.find(t=>t.id===p.type)!.subs;
  const users=data.users.filter(u=>u.active);
- const valid=[!!p.name.trim()&&!!p.start&&(!p.end||p.end>=p.start)&&p.roles.PM.length>0&&!!p.unit,true,true,p.stages.length>0&&p.stages.every(s=>s.name.trim()),true];
+ const valid=[!!p.name.trim()&&!!p.start&&(!p.end||p.end>=p.start)&&(p.roles.PM??[]).length>0&&!!p.unit,pending.length===0,true,p.stages.length>0&&p.stages.every(s=>s.name.trim()),true];
  const firstInvalid=valid.findIndex(v=>!v);
  // Đổi phân loại khi tạo mới → thay giai đoạn mẫu cho khớp (Game/App khác Sản phẩm nội bộ).
  const setSub=(subType:string)=>upd(v=>({subType,...(!editing?{stages:stageTemplate(subType,v.flagship),currentStage:''}:{})}));
@@ -73,26 +74,39 @@ export function ProjectForm({initial,close,done,notify}:{initial?:ProjectConfig;
    {p.end&&p.start&&p.end<p.start&&<small className="warn">Ngày kết thúc phải sau ngày bắt đầu</small>}</Field>
  </section>;
 
- const who=(ids:string[])=>ids.map(id=>users.find(u=>u.id===id)?.name).filter(Boolean).join(', ')||'chưa chọn';
- const people=<section className="eks-card flush">
-  <p className="hint pf-intro">Tìm và chọn thành viên theo từng vai trò. PM: <b>{who(p.roles.PM)}</b> · UA: <b>{who(p.roles.UA)}</b> (chọn ở Thông tin chung). Creative viết báo cáo mảng Creative; mọi vai trò là thành viên dự án.</p>
-  {roles.filter(r=>r.id!=='PM'&&r.id!=='UA').map(r=><div className="pf-role" key={r.id}><div className="pf-role-head"><strong>{r.label}</strong>{'writes' in r?<small>Viết báo cáo {r.writes}</small>:<small>Thành viên</small>}<New/></div>
-   <MemberSearch label={'Thành viên '+r.label} placeholder={`Tìm thành viên ${r.label}`} users={users} value={p.roles[r.id]} onChange={v=>setRole(r.id,v)}/></div>)}
+ const people=<section className="eks-card">
+  <p className="hint pf-intro-plain">Thêm thành viên, sau đó chọn vai trò. Có thể tạo vai trò mới. Creative viết báo cáo mảng Creative.</p>
+  <MemberRoles users={users} value={p.roles} onChange={roles=>set({roles})} pending={pending} setPending={setPending}/>
  </section>;
 
  // OKR đã có của dự án (ngoài cấu hình, vd. dự án mẫu) chỉ hiện để tham chiếu khi sửa.
  const existing=editing?entities.filter(e=>e.type==='Objective'&&e.project===p.id&&!p.okrs.some(o=>o.id===e.id)):[];
+ const krs=teamGoals.filter(g=>g.parent);const chosenKrs=krs.filter(g=>p.teamGoals.includes(g.id));
+ const okrOptions=[...existing.map(o=>({id:o.id,label:o.label})),...p.okrs.filter(o=>o.title.trim()).map(o=>({id:o.id,label:o.title}))];
  const okr=<>
-  <p className="hint pf-intro-top"><Target/> OKR dự án kỳ <b>{currentPeriod}</b>. Không bắt buộc, có thể tạo sau ở tab Mục tiêu &amp; báo cáo. Sang kỳ mới chỉ tạo OKR mới, dự án giữ nguyên.</p>
+  <p className="hint pf-intro-top"><Target/><span>Đi từ trên xuống: dự án đóng góp cho KR nào của BU/Team → OKR dự án kỳ <b>{currentPeriod}</b> → mốc cần đạt. Không bắt buộc, có thể làm sau.</span></p>
+  {/* 1. OKR của BU / Team mà dự án đóng góp (chuyển từ bước cuối về đây cho đúng thứ tự mục tiêu). */}
+  <section className="eks-card"><h4 className="pf-h">Đóng góp cho OKR BU / Team<New/></h4>
+   <div className="eks-kr-list">{krs.map(g=>{const on=p.teamGoals.includes(g.id);return <button key={g.id} aria-pressed={on} className={'eks-kr'+(on?' on':'')} onClick={()=>upd(v=>({teamGoals:on?v.teamGoals.filter(x=>x!==g.id):[...v.teamGoals,g.id],okrs:on?v.okrs.map(o=>o.teamGoal===g.id?{...o,teamGoal:undefined}:o):v.okrs}))}>{on?<Check size={14}/>:<Plus size={14}/>}<b>{g.code}</b><span>{g.label} <small className="hint">· Team {teamName(g.team)}</small></span></button>})}</div></section>
+  {/* 2. OKR dự án: mỗi mục tiêu chọn được KR team mà nó phục vụ. */}
+  <h4 className="pf-h pf-sec">OKR dự án · {currentPeriod}</h4>
   {existing.length>0&&<section className="eks-card pf-okr-existing"><small>Đã có</small>{existing.map(o=><div key={o.id}><strong>{o.label}</strong></div>)}</section>}
   {p.okrs.map((o,oi)=><section className="eks-card pf-okr" key={o.id}>
-   <header className="pf-okr-head"><span className="okr-code circle">O{existing.length+oi+1}</span><AutoTextarea className="pf-okr-title" aria-label={'Mục tiêu '+(oi+1)} rows={1} placeholder="Tên mục tiêu (Objective)" value={o.title} onChange={e=>patchOkr(o.id,x=>({...x,title:e.target.value}))}/><button className="pf-x" aria-label={'Xóa mục tiêu '+(oi+1)} onClick={()=>upd(v=>({okrs:v.okrs.filter(x=>x.id!==o.id)}))}><X size={14}/></button></header>
+   <header className="pf-okr-head"><span className="okr-code circle">O{existing.length+oi+1}</span><AutoTextarea className="pf-okr-title" aria-label={'Mục tiêu '+(oi+1)} rows={1} placeholder="Tên mục tiêu (Objective)" value={o.title} onChange={e=>patchOkr(o.id,x=>({...x,title:e.target.value}))}/><button className="pf-x" aria-label={'Xóa mục tiêu '+(oi+1)} onClick={()=>upd(v=>({okrs:v.okrs.filter(x=>x.id!==o.id),milestones:v.milestones.map(m=>m.okr===o.id?{...m,okr:undefined}:m)}))}><X size={14}/></button></header>
+   {chosenKrs.length>0&&<label className="pf-okr-link">Đóng góp cho<select className="eks-select small" aria-label={'KR team cho mục tiêu '+(oi+1)} value={o.teamGoal??''} onChange={e=>patchOkr(o.id,x=>({...x,teamGoal:e.target.value||undefined}))}><option value="">— Chưa chọn —</option>{chosenKrs.map(g=><option key={g.id} value={g.id}>{g.code} · {g.label}</option>)}</select></label>}
    {o.items.map((k,ki)=><div className="pf-okr-item" key={k.id}><select className="eks-select small" aria-label={'Loại kết quả '+(ki+1)} value={k.type} onChange={e=>patchOkr(o.id,x=>({...x,items:x.items.map(y=>y.id===k.id?{...y,type:e.target.value as 'KR'|'KS'}:y)}))}><option value="KR">KR</option><option value="KS">KS</option></select>
     <input className="eks-input one" aria-label={'Kết quả '+(ki+1)} placeholder={k.type==='KR'?'Key Result đo được, vd. D1 retention ≥ 40%':'Key Success, vd. Soft launch 2 thị trường'} value={k.title} onChange={e=>patchOkr(o.id,x=>({...x,items:x.items.map(y=>y.id===k.id?{...y,title:e.target.value}:y)}))}/>
     <button className="pf-x" aria-label={'Xóa kết quả '+(ki+1)} onClick={()=>patchOkr(o.id,x=>({...x,items:x.items.filter(y=>y.id!==k.id)}))}><X size={14}/></button></div>)}
    <Button quiet onClick={()=>patchOkr(o.id,x=>({...x,items:[...x.items,{id:uid(),type:'KR',title:''}]}))}><Plus/> Thêm KR / KS</Button>
   </section>)}
   <Button onClick={()=>upd(v=>({okrs:[...v.okrs,newOkr()]}))}><Plus/> Thêm mục tiêu</Button>
+  {/* 3. Mốc: ngày cụ thể cần đạt một kết quả, gắn với mục tiêu. Khác giai đoạn (giai đoạn = ai báo cáo, bao lâu một lần). */}
+  <section className="eks-card pf-ms-card"><h4 className="pf-h"><Flag/> Mốc quan trọng <small className="hint">không bắt buộc</small></h4>
+   <p className="hint">Ngày cụ thể cần đạt một kết quả của mục tiêu, vd. "Soft launch VN · 15/10". Khác <b>giai đoạn</b> (giai đoạn chỉ quy định ai báo cáo, bao lâu một lần). Mốc gắn được vào báo cáo để theo dõi tiến độ.</p>
+   {p.milestones.map(m=><div className="pf-ms" key={m.id}><input className="eks-input one" aria-label="Tên mốc" placeholder="Tên mốc" value={m.label} onChange={e=>upd(v=>({milestones:v.milestones.map(x=>x.id===m.id?{...x,label:e.target.value}:x)}))}/><input type="date" className="eks-select" aria-label="Ngày" value={m.date} onChange={e=>upd(v=>({milestones:v.milestones.map(x=>x.id===m.id?{...x,date:e.target.value}:x)}))}/>
+    {okrOptions.length>0&&<select className="eks-select small" aria-label="Thuộc mục tiêu" value={m.okr??''} onChange={e=>upd(v=>({milestones:v.milestones.map(x=>x.id===m.id?{...x,okr:e.target.value||undefined}:x)}))}><option value="">Mục tiêu…</option>{okrOptions.map((o,i)=><option key={o.id} value={o.id}>O{i+1} · {o.label.slice(0,40)}</option>)}</select>}
+    <button className="pf-x" aria-label="Xóa mốc" onClick={()=>upd(v=>({milestones:v.milestones.filter(x=>x.id!==m.id)}))}><X size={14}/></button></div>)}
+   <Button quiet onClick={()=>upd(v=>({milestones:[...v.milestones,newMilestone()]}))}><Plus/> Thêm mốc</Button></section>
  </>;
 
  // Ma trận Giai đoạn × Đầu báo cáo (Product / UA / Creative) + tần suất, gom theo pha: Phát triển sản phẩm → Vận hành → Tạm dừng.
@@ -101,7 +115,7 @@ export function ProjectForm({initial,close,done,notify}:{initial?:ProjectConfig;
  const stages=<>
   <p className="hint pf-intro-top"><Info/><span>Mỗi giai đoạn quy định <b>ai phải báo cáo</b> và <b>bao lâu một lần</b>. {isApp?'Mẫu cho Game/App: Prototype → Soft Launch (Product báo cáo chính) → Global Launch → Maturity (UA báo cáo chính) → Pend.':'Có thể đổi tên, thêm hoặc bớt giai đoạn.'}</span></p>
   <div className="pf-legend"><span className="rq required">Bắt buộc</span> phải gửi theo tần suất, quá hạn bị tính thiếu <span className="rq optional">Tùy chọn</span> gửi khi cần <span className="rq none">Không cần</span></div>
-  <section className="eks-card flush"><table className="pf-stages"><thead><tr><th className="c-now">Hiện tại</th><th>Giai đoạn</th>{reporters.map(r=><th key={r.track}>{r.label}</th>)}<th>Tần suất</th><th/></tr></thead>
+  <section className="eks-card flush"><table className="pf-stages"><thead><tr className="pf-head-top"><th className="c-now" rowSpan={2}>Đang ở</th><th rowSpan={2}>Giai đoạn</th><th colSpan={reporters.length} className="pf-head-group">Ai phải báo cáo</th><th rowSpan={2}>Tần suất</th><th rowSpan={2}/></tr><tr className="pf-head-sub">{reporters.map(r=><th key={r.track}>{r.label}</th>)}</tr></thead>
    {phases.map(ph=>{const list=p.stages.filter(s=>s.phase===ph.id);if(!list.length&&ph.id==='pause')return null;return <tbody key={ph.id}>
     <tr className="pf-phase"><td colSpan={reporters.length+4}><strong>{ph.label}</strong><small>{ph.hint}</small><button className="text-button" onClick={()=>addStage(ph.id)}><Plus size={12}/> Thêm</button></td></tr>
     {list.map(s=><tr key={s.id} className={current===s.id?'current':''}>
@@ -115,13 +129,7 @@ export function ProjectForm({initial,close,done,notify}:{initial?:ProjectConfig;
   {isApp&&p.stages.some(s=>s.key==='maturity')&&<p className="hint">Maturity đang theo mẫu <b>{p.flagship?'dự án chủ lực':'dự án không chủ lực'}</b>: {p.flagship?'mọi đầu báo cáo hằng tuần.':'chỉ UA vận hành, báo cáo khi có cập nhật để dự án không bị thả trôi.'} Đổi ở "Dự án chủ lực" (bước 1).</p>}
  </>;
 
- const krs=teamGoals.filter(g=>g.parent);
  const goals=<>
-  <section className="eks-card"><h4 className="pf-h">Liên kết OKR BU / Team<New/></h4><p className="hint">Dự án đóng góp trực tiếp vào KR nào của BU/Team.</p>
-   <div className="eks-kr-list">{krs.map(g=>{const on=p.teamGoals.includes(g.id);return <button key={g.id} aria-pressed={on} className={'eks-kr'+(on?' on':'')} onClick={()=>upd(v=>({teamGoals:on?v.teamGoals.filter(x=>x!==g.id):[...v.teamGoals,g.id]}))}>{on?<Check size={14}/>:<Plus size={14}/>}<b>{g.code}</b><span>{g.label} <small className="hint">· Team {teamName(g.team)}</small></span></button>})}</div></section>
-  <section className="eks-card"><h4 className="pf-h"><Flag/> Milestone <small className="hint">không bắt buộc</small></h4><p className="hint">Chỉ thêm khi cần chia nhỏ các mốc quan trọng. Mốc gắn được vào báo cáo.</p>
-   {p.milestones.map(m=><div className="row pf-ms" key={m.id}><input className="eks-input one" aria-label="Tên mốc" placeholder="Tên mốc, vd. Soft launch VN" value={m.label} onChange={e=>upd(v=>({milestones:v.milestones.map(x=>x.id===m.id?{...x,label:e.target.value}:x)}))}/><input type="date" className="eks-select" aria-label="Ngày" value={m.date} onChange={e=>upd(v=>({milestones:v.milestones.map(x=>x.id===m.id?{...x,date:e.target.value}:x)}))}/><button className="pf-x" aria-label="Xóa mốc" onClick={()=>upd(v=>({milestones:v.milestones.filter(x=>x.id!==m.id)}))}><X size={14}/></button></div>)}
-   <Button quiet onClick={()=>upd(v=>({milestones:[...v.milestones,newMilestone()]}))}><Plus/> Thêm mốc</Button></section>
   <section className="eks-card"><h4 className="pf-h"><Hash/> Kênh Slack nhận recap<New/></h4><p className="hint">Sau khi xuất bản báo cáo dự án, iGoal gửi recap + link về kênh này. Để trống nếu không dùng.</p>
    <div className="pf-slack"><Hash/><input aria-label="Kênh Slack" placeholder="ten-kenh-du-an" value={p.channel.replace(/^#/,'')} onChange={e=>set({channel:e.target.value})}/></div></section>
   <section className="eks-card flush"><h4 className="pf-h pad">Quyền xem báo cáo theo nhóm<New/></h4><p className="hint pad">Ai được xem báo cáo của từng mảng. Mặc định báo cáo Kinh doanh/UA chỉ PM, UA, BU Head và Vận hành xem được.</p>
@@ -130,7 +138,7 @@ export function ProjectForm({initial,close,done,notify}:{initial?:ProjectConfig;
  </>;
 
  const body=[info,people,okr,stages,goals][step];const last=STEPS.length-1;
- const hintOf=(i:number)=>i===0?'Cần tên dự án, Product Manager, đơn vị phụ trách và ngày bắt đầu':i===3?'Mỗi giai đoạn cần có tên':undefined;
+ const hintOf=(i:number)=>i===0?'Cần tên dự án, Product Manager, đơn vị phụ trách và ngày bắt đầu':i===1?'Chọn vai trò cho thành viên vừa thêm':i===3?'Mỗi giai đoạn cần có tên':undefined;
  const footer=editing?<><Button primary disabled={firstInvalid>=0} title={firstInvalid>=0?'Còn thiếu thông tin ở '+STEPS[firstInvalid]:undefined} onClick={save}>Lưu</Button><Button onClick={close}>Hủy</Button></>
   :<>{step<last?<Button primary disabled={!valid[step]} title={!valid[step]?hintOf(step):undefined} onClick={()=>setStep(step+1)}>Tiếp theo: {STEPS[step+1]}</Button>:<Button primary onClick={save}><CheckCircle/> Tạo dự án</Button>}
    {step>0?<Button onClick={()=>setStep(step-1)}><ArrowLeft/> Quay lại</Button>:<Button onClick={close}>Hủy</Button>}
@@ -174,7 +182,7 @@ export function ProjectSettings({cfg,edit}:{cfg:ProjectConfig;edit:()=>void}){
  const cur=cfg.currentStage||cfg.stages[0]?.id;
  return <section className="surface document pf-settings"><div className="row between"><h2>Quản lý dự án</h2><Button onClick={edit}>Chỉnh sửa</Button></div>
   <div className="pf-grid">
-   <div><h3>Nhân sự & vai trò</h3><dl>{roles.map(r=><React.Fragment key={r.id}><dt>{r.label}</dt><dd>{who(cfg.roles[r.id])}</dd></React.Fragment>)}</dl></div>
+   <div><h3>Nhân sự & vai trò</h3><dl>{Object.entries(cfg.roles).filter(([,ids])=>ids.length).map(([r,ids])=><React.Fragment key={r}><dt>{roleLabel(r)}</dt><dd>{who(ids)}</dd></React.Fragment>)}</dl></div>
    <div><h3>Thông tin</h3><dl><dt>Loại</dt><dd>{projectTypes.find(t=>t.id===cfg.type)?.label} · {cfg.subType}{cfg.flagship?' · Chủ lực':''}</dd><dt>Đơn vị</dt><dd>{cfg.unit}</dd><dt>Team</dt><dd>{cfg.team||"—"}</dd><dt>Phối hợp</dt><dd>{cfg.partners?.join(", ")||"—"}</dd><dt>Thời gian</dt><dd>{fmt(cfg.start)} – {cfg.end?fmt(cfg.end):'Dài hạn, xuyên kỳ'}</dd><dt>Nền tảng</dt><dd>{cfg.platforms.join(', ')||'—'}</dd><dt>Slack</dt><dd>{cfg.channel||'Không gửi recap'}</dd></dl></div>
   </div>
   <h3>Giai đoạn & báo cáo</h3>

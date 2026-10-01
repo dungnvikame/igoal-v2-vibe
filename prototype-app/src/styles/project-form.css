@@ -159,3 +159,38 @@
 .pf-stages input.pf-stage-name:hover,.pf-stages input.pf-stage-date:hover{background:var(--bg-tertiary)!important}
 .pf-stages input.pf-stage-name:focus,.pf-stages input.pf-stage-date:focus{background:var(--bg-primary)!important;box-shadow:0 0 0 2px var(--blue-soft)!important}
 .pf-intro-top>span{flex:1}
+/* ---------- Feedback 29/09: thành viên theo vai trò linh hoạt ---------- */
+.pf-intro-plain{margin:0 0 10px;font-size:12px}
+.mr-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column}
+.mr-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto 26px;align-items:center;gap:10px;padding:8px 4px;border-top:1px solid var(--border-secondary)}
+.mr-row.pending{background:var(--amber-soft);border-radius:8px;border-top-color:transparent}
+.mr-name strong{display:block;font-size:13px;font-weight:550}
+.mr-name small{display:block;font-size:12px;color:var(--text-tertiary)}
+.mr-role{position:relative}
+.mr-role-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border-secondary);border-radius:7px;background:var(--bg-primary);padding:5px 10px;font-size:13px;font-weight:550;min-width:140px;justify-content:space-between}
+.mr-role-btn.empty{border-color:var(--amber);color:var(--amber);font-weight:500}
+.mr-role-fixed{font-size:12px;color:var(--text-secondary);padding:5px 10px;background:var(--bg-secondary);border-radius:7px}
+.mr-pop{position:absolute;right:0;top:calc(100% + 4px);z-index:50;width:240px;background:var(--bg-primary);border:1px solid var(--border-secondary);border-radius:10px;box-shadow:var(--shadow);padding:4px}
+.mr-opt{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:0;background:none;text-align:left;padding:7px 8px;border-radius:7px;font-size:13px}
+.mr-opt:hover,.mr-opt.on{background:var(--bg-secondary)}
+.mr-opt strong{display:block;font-weight:550}
+.mr-opt small{display:block;font-size:11px;color:var(--text-tertiary)}
+.mr-opt.add{justify-content:flex-start;color:var(--blue);border-top:1px solid var(--border-secondary);border-radius:0 0 7px 7px;margin-top:2px}
+.mr-new{display:flex;gap:6px;padding:6px}
+.mr-new input{flex:1;min-width:0;border:1px solid var(--border-secondary);border-radius:6px;padding:5px 8px;font-size:13px}
+.mr-new button{border:0;border-radius:6px;background:var(--accent);color:#fff;padding:5px 10px;font-size:12px}
+.mr-new button:disabled{opacity:.5}
+/* Bảng giai đoạn: header 2 tầng, nổi bật "Ai phải báo cáo" */
+.pf-stages thead th{background:var(--bg-secondary);color:var(--text-primary);font-size:12px;letter-spacing:0;text-transform:none;font-weight:650}
+.pf-stages thead .pf-head-group{text-align:center;background:var(--blue-soft);color:var(--blue);border-bottom:0;font-size:12px;letter-spacing:.3px;text-transform:uppercase}
+.pf-stages thead .pf-head-sub th{background:var(--blue-soft);color:var(--text-primary);font-size:13px;padding-top:4px}
+.pf-stages thead th:first-child{border-top-left-radius:10px}
+.pf-stages thead tr:first-child th:last-child{border-top-right-radius:10px}
+/* Bước OKR: KR team → OKR dự án → mốc */
+.pf-sec{margin:18px 0 8px}
+.pf-okr-link{display:flex;align-items:center;gap:8px;margin:0 0 10px 40px;font-size:12px;color:var(--text-secondary)}
+.pf-okr-link select{width:auto;max-width:340px}
+.pf-ms{display:grid;grid-template-columns:minmax(0,1fr) 150px 160px 26px;gap:8px;align-items:center;margin-bottom:8px}
+.pf-ms-card{margin-top:16px}
+@media(max-width:680px){.pf-ms{grid-template-columns:1fr 26px}.mr-row{grid-template-columns:24px 1fr 26px}.mr-role{grid-column:2}}
+.pf-stages th.c-now{white-space:nowrap;width:64px}

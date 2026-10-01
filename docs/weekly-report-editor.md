@@ -9,6 +9,8 @@ Cập nhật: 28/09/2026 · Prototype: `prototype-app/src/Weekly.tsx`, `SlashMen
 
 ## Lệnh "/"
 - Chỉ trong phần viết tự do, gõ ở đầu dòng.
+- Chip "Dự án" trong Liên kết ⇔ khung Báo cáo dự án (1:1): chọn dự án trong Liên kết = thêm khung, gỡ chip = bỏ khung (hỏi lại nếu đã viết); thêm khung bằng "/" cũng gắn chip. Nhờ vậy khi gắn 2 dự án, mỗi dự án có khung riêng → biết rõ nội dung nào của dự án nào. Chỉ chọn được dự án user có quyền viết.
+- Báo cáo viết trong một dự án (báo cáo dự án): chỉ gắn được mục tiêu của chính dự án đó, không gắn dự án khác.
 - Menu giữ lệnh editor: **Style** (Text, Heading 1–4, Bullet, Numbered, To-do, Blockquote, Code) · **Insert** (Divider, Table) · **Báo cáo dự án** ở dưới cùng (chỉ dự án user có quyền viết, chưa có khung).
 - Không có "Báo cáo chung" trong menu. Trong khung dự án không có "/" (không lồng khung).
 - Prototype dùng textarea: định dạng là tiền tố kiểu markdown. Bản thật: rich text editor hiện tại + thêm nhóm "Báo cáo dự án".

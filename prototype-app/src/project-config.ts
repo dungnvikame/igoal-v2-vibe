@@ -24,7 +24,8 @@ export const unitTeams:Record<string,string[]>={Technology:['Platform Developmen
 export const currentPeriod='H2 2026';
 /** OKR dự án tạo ngay trong luồng Tạo dự án: mục tiêu + các KR/KS con. */
 export type OkrItem={id:string;type:'KR'|'KS';title:string};
-export type ProjectOkr={id:string;title:string;items:OkrItem[]};
+/** `teamGoal` = KR của BU/Team mà mục tiêu dự án này đóng góp (trong số KR team dự án đã chọn). */
+export type ProjectOkr={id:string;title:string;items:OkrItem[];teamGoal?:string};
 /** Role chính của dự án. `writes` = mảng báo cáo role đó viết (người có role viết được báo cáo dự án). */
 export const roles=[
  {id:'PM',label:'PM',writes:'Sản phẩm' as Track,required:true},
@@ -33,9 +34,11 @@ export const roles=[
  {id:'Dev',label:'Dev'},
  {id:'QA',label:'QA'},
 ] as const;
-export type RoleId=typeof roles[number]['id'];
+/** Vai trò: có sẵn (roles) hoặc vai trò mới do người tạo dự án tự đặt tên (lưu nguyên tên). */
+export type RoleId=string;
+export const roleLabel=(id:string)=>roles.find(r=>r.id===id)?.label??id;
 /** Nhóm được cấp quyền xem theo mảng báo cáo: các role dự án + nhóm ngoài dự án. */
-export const viewerGroups=[...roles.map(r=>({id:r.id as string,label:r.label})),{id:'BUHEAD',label:'BU Head'},{id:'OPS',label:'Vận hành'}];
+export const viewerGroups=[...roles.map(r=>({id:r.id as string,label:r.label})),{id:'OTHER',label:'Vai trò khác'},{id:'BUHEAD',label:'BU Head'},{id:'OPS',label:'Vận hành'}];
 export const cadences=['Hằng ngày','1 tuần/lần','2 tuần/lần','1 tháng/lần','Khi có cập nhật'] as const;
 /** Số ngày của một kỳ báo cáo theo tần suất (null = không có hạn, "Khi có cập nhật"). */
 export const cadenceDays=(c:string)=>c==='Hằng ngày'?1:c==='1 tuần/lần'?7:c==='2 tuần/lần'?14:c==='1 tháng/lần'?30:null;
@@ -54,13 +57,15 @@ export type Phase=typeof phases[number]['id'];
 export type Stage={id:string;key?:string;name:string;phase:Phase;start:string;req:Record<Track,Req>;cadence:string};
 /** Các đầu cần báo cáo trong giai đoạn (bắt buộc hoặc tùy chọn). */
 export const activeTracks=(s:Stage)=>reporters.filter(r=>s.req[r.track]!=='none');
-export type Milestone={id:string;label:string;date:string};
+/** Mốc: ngày cụ thể cần đạt một kết quả (khác giai đoạn). `okr` = mục tiêu dự án mà mốc phục vụ (tùy chọn). */
+export type Milestone={id:string;label:string;date:string;okr?:string};
 export type ProjectConfig={id:string;name:string;description:string;type:ProjectType;subType:string;platforms:string[];
  /** Dự án chủ lực: đủ nguồn lực mọi đầu → ở Maturity mọi đầu vẫn báo cáo; không chủ lực → Maturity chỉ còn UA vận hành, báo cáo thỉnh thoảng. */
  flagship:boolean;/** `team` = BU/Center/Team phụ trách (thuộc `unit`); `partners` = đơn vị phối hợp. */
  unit:string;team:string;partners:string[];
  /** `end` rỗng = dài hạn, chạy xuyên nhiều kỳ. */
  start:string;end:string;
+ /** roles[vai trò] = id thành viên. PM, UA luôn có (có thể rỗng); vai trò khác thêm tự do ở bước Thành viên. */
  roles:Record<RoleId,string[]>;stages:Stage[];currentStage:string;
  /** KR của BU/Team mà dự án đóng góp (TeamGoal id). */
  teamGoals:string[];milestones:Milestone[];channel:string;
@@ -97,7 +102,7 @@ export const applyFlagship=(stages:Stage[],flagship:boolean)=>stages.map(s=>s.ke
 /** Mặc định: báo cáo Kinh doanh/UA nhạy cảm chỉ PM, UA, BU Head, Vận hành xem; mảng khác mọi nhóm xem. */
 export const defaultVisibility=():Record<Track,string[]>=>({'Sản phẩm':viewerGroups.map(g=>g.id),'Kinh doanh':['PM','UA','BUHEAD','OPS'],'Creative':viewerGroups.map(g=>g.id)});
 export const blankProject=():ProjectConfig=>({id:uid(),name:'',description:'',type:'BUSINESS',subType:'Game',flagship:false,platforms:[],unit:'BU Game',team:'Game Studio 1',partners:[],okrs:[],start:'',end:'',
- roles:{PM:[],UA:[],Creative:[],Dev:[],QA:[]},stages:stageTemplate('Game'),currentStage:'',teamGoals:[],milestones:[],channel:'',visibility:defaultVisibility()});
+ roles:{PM:[],UA:[]},stages:stageTemplate('Game'),currentStage:'',teamGoals:[],milestones:[],channel:'',visibility:defaultVisibility()});
 export const typeLabel=(t:ProjectType)=>projectTypes.find(x=>x.id===t)?.label??t;
 export const stageOf=(p:ProjectConfig)=>p.stages.find(s=>s.id===p.currentStage)??p.stages[0];
 
@@ -138,9 +143,9 @@ export function syncProjects(list:ProjectConfig[]){
   let e=entities.find(x=>x.id===p.id&&x.type==='Project');
   if(!e){e={id:p.id,type:'Project',label:p.name,project:p.id};entities.push(e);projects.push(e)}else e.label=p.name;
   const all=[...new Set(Object.values(p.roles).flat())];
-  projectMeta[p.id]={owner:p.roles.PM.map(name).join(', ')||'—',unit:p.unit,team:p.team,tags:[typeLabel(p.type),p.subType],description:p.description};
-  projectMembers[p.id]=[...new Set([...(baseMembers[p.id]??[]),...all])];entityAdmins[p.id]=[...new Set([...(entityAdmins[p.id]??[]),...p.roles.PM])];
-  reportWriters[p.id]=[...new Set([...(baseWriters[p.id]??[]),...p.roles.PM,...p.roles.UA,...p.roles.Creative])];
+  projectMeta[p.id]={owner:(p.roles.PM??[]).map(name).join(', ')||'—',unit:p.unit,team:p.team,tags:[typeLabel(p.type),p.subType],description:p.description};
+  projectMembers[p.id]=[...new Set([...(baseMembers[p.id]??[]),...all])];entityAdmins[p.id]=[...new Set([...(entityAdmins[p.id]??[]),...(p.roles.PM??[])])];
+  reportWriters[p.id]=[...new Set([...(baseWriters[p.id]??[]),...(p.roles.PM??[]),...(p.roles.UA??[]),...(p.roles.Creative??[])])];
   if(p.channel)projectChannels[p.id]=p.channel;else delete projectChannels[p.id];
   // OKR tạo trong luồng: Objective + KR/KS (đánh số theo loại) thành entity của dự án, gắn được vào báo cáo / check-in.
   for(const o of p.okrs??[]){entities.push({id:o.id,type:"Objective",label:o.title,project:p.id,progress:0});syncedIds.push(o.id);const n={KR:0,KS:0};for(const k of o.items){n[k.type]++;entities.push({id:k.id,type:k.type,label:`${k.type}${n[k.type]} · ${k.title}`,project:p.id,progress:0});syncedIds.push(k.id)}}

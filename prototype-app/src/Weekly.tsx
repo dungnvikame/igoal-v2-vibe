@@ -37,7 +37,8 @@ export function Weekly({initial,close,source,notify,publish}:{initial:Report;clo
  const {data,user,saveReport}=useStore();
  const isPM=initial.scope==='project';const projectId=isPM?initial.relations[0]:undefined;
  // Liên kết giữ nguyên như bản nháp (báo cáo mới: trống; PM: dự án đang mở, khóa).
- const [base]=useState<Report>(()=>({...initial,sections:withFree(initial.sections)}));
+ // Nháp đã gắn dự án nhưng chưa có khung (dữ liệu cũ) → tạo khung để giữ quy tắc chip Dự án ⇔ khung báo cáo dự án.
+ const [base]=useState<Report>(()=>{let sections=withFree(initial.sections);if(!isPM)for(const id of initial.relations)if(entities.find(e=>e.id===id)?.type==='Project'&&!sections.some(s=>s.project===id))sections=[...sections,...TEMPLATE(id)];return {...initial,sections}});
  const [r,setR]=useState<Report>(base);
  const [saved,setSaved]=useState(false),[savedAt,setSavedAt]=useState(''),[leaving,setLeaving]=useState(false),[panel,setPanel]=useState<string|null>('old'),[added,setAdded]=useState<string[]>([]);
  const [focus,setFocus]=useState<string|null>(null),[removing,setRemoving]=useState<string|null>(null);
@@ -61,8 +62,15 @@ export function Weekly({initial,close,source,notify,publish}:{initial:Report;clo
  const patch=(p:Partial<Report>)=>{setR(x=>({...x,...p}));setSaved(false)};
  // Mọi thay đổi nội dung đi qua đây (đánh dấu chưa lưu).
  const edit=(f:(x:Report)=>Report)=>{setR(f);setSaved(false)};
- const addBlock=(project:string)=>{edit(x=>x.sections.some(s=>s.project===project)?x:{...x,sections:[...x.sections,...TEMPLATE(project)]});setFocus(project)};
- const removeBlock=(project:string)=>{edit(x=>({...x,sections:x.sections.filter(s=>s.project!==project)}));setRemoving(null)};
+ // Chip "Dự án" trong Liên kết ⇔ khung Báo cáo dự án (1:1): thêm khung = gắn dự án, bỏ khung = gỡ dự án. Nhờ vậy luôn biết nội dung nào thuộc dự án nào.
+ const addBlock=(project:string)=>{edit(x=>({...x,relations:x.relations.includes(project)?x.relations:[...x.relations,project],sections:x.sections.some(s=>s.project===project)?x.sections:[...x.sections,...TEMPLATE(project)]}));setFocus(project)};
+ const removeBlock=(project:string)=>{edit(x=>({...x,relations:x.relations.filter(id=>id!==project),sections:x.sections.filter(s=>s.project!==project)}));setRemoving(null)};
+ const isProject=(id:string)=>entities.find(e=>e.id===id)?.type==='Project';
+ // Đổi Liên kết: dự án thêm → thêm khung; dự án gỡ → bỏ khung (hỏi nếu đã viết); loại khác cập nhật bình thường.
+ const changeRelations=(v:string[])=>{if(isPM){patch({relations:v});return}
+  const addP=v.filter(id=>isProject(id)&&!r.relations.includes(id)),delP=r.relations.filter(id=>isProject(id)&&!v.includes(id));
+  patch({relations:[...v.filter(id=>!isProject(id)),...r.relations.filter(isProject)]});
+  addP.forEach(addBlock);delP.forEach(p=>r.sections.some(s=>s.project===p&&s.text.trim())?setRemoving(p):removeBlock(p))};
  const setText=(i:number,text:string)=>edit(x=>({...x,sections:x.sections.map((s,j)=>j===i?{...s,text,sources:text.trim()?s.sources:[]}:s)}));
  // Chèn từ panel: dòng của báo cáo dự án → mục tương ứng trong khung dự án đó (nếu đã có), còn lại → cuối phần viết tự do.
  const destProject=(sourceId:string)=>{const src=data.reports.find(x=>x.id===sourceId);const proj=src?.scope==='project'?src.relations.find(id=>entities.find(e=>e.id===id)?.type==='Project'):undefined;return proj&&has(proj)?proj:undefined};
@@ -91,7 +99,7 @@ export function Weekly({initial,close,source,notify,publish}:{initial:Report;clo
   <input className="title-input" aria-label="Tên báo cáo" value={r.title} onChange={e=>patch({title:e.target.value})}/>
   <MetaRow label="Quản lý trực tiếp"><UserChip/></MetaRow>
   <MetaRow label="Loại báo cáo"><TrackSelect value={r.track} onChange={t=>patch({track:t})}/></MetaRow>
-  <MetaRow label="Liên kết"><EntityRelationPicker value={r.relations} onChange={v=>patch({relations:v})} locked={isPM?[projectId!]:[]} suggestions={relSuggest} personal={!isPM} footer={!isPM&&<TeamContribution relations={r.relations}/>}/></MetaRow>
+  <MetaRow label="Liên kết"><EntityRelationPicker value={r.relations} onChange={changeRelations} locked={isPM?[projectId!]:[]} suggestions={relSuggest} personal={!isPM} onlyProject={projectId} projectIds={isPM?undefined:writable.map(p=>p.id)} projectHint={isPM?"Báo cáo viết trong dự án này chỉ gắn mục tiêu của dự án. Báo cáo cho dự án khác: viết ở My EKS và thêm khung dự án.":"Chọn một dự án = thêm khung Báo cáo dự án riêng bên dưới để viết nội dung cho dự án đó."} footer={!isPM&&<TeamContribution relations={r.relations}/>}/></MetaRow>
   <div className="divider"/>
   {blocks.map(b=>{
    // Báo cáo chung: phần viết tự do (có "/").

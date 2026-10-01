@@ -5,13 +5,13 @@ Cập nhật: 29/09/2026 · Prototype: `prototype-app/src/ProjectForm.tsx`, `pro
 ## Nhu cầu → thiết kế
 | Nhu cầu | Đáp ứng | Ở đâu |
 |---|---|---|
-| Loại dự án, nền tảng, BU/team, role PM/UA/Creative/Dev/QA | Bước 1: loại + phân loại, nền tảng, Product Manager, Đơn vị phụ trách, BU/Cen/Team phụ trách (2 dòng, team lọc theo đơn vị), Đơn vị phối hợp, UA phụ trách · Bước 2 "Thành viên": Creative / Dev / QA. Mọi vai trò chọn bằng ô tìm kiếm (tên / chức danh / team, không dấu) | Mới: nền tảng, Creative/Dev/QA |
-| Tạo OKR cho dự án | Bước 3 "OKR dự án": mục tiêu + KR/KS kỳ hiện tại, không bắt buộc. Khi sửa: hiện OKR đã có, thêm được OKR mới | Mới |
+| Loại dự án, nền tảng, BU/team, role PM/UA/Creative/Dev/QA | Bước 1: loại + phân loại, nền tảng, Product Manager, Đơn vị phụ trách, BU/Cen/Team phụ trách, Đơn vị phối hợp, UA phụ trách · Bước 2 "Thành viên": **thêm người trước → chọn vai trò** (dropdown tự mở; vai trò có sẵn PM/UA/Creative/Dev/QA hoặc **vai trò mới** tự đặt tên). Chưa chọn vai trò thì chưa qua bước | Mới: nền tảng, vai trò linh hoạt |
+| Tạo OKR cho dự án + link OKR BU/Team | Bước 3 "OKR dự án", đi từ trên xuống: (1) KR của BU/Team dự án đóng góp → (2) OKR dự án kỳ hiện tại, mỗi mục tiêu chọn "Đóng góp cho" KR team → (3) Mốc quan trọng | Mới |
 | Start/End date, chạy xuyên H1/H2 | Bước 1: Bắt đầu + Kết thúc hoặc "Dài hạn". Dự án không gắn kỳ; mỗi kỳ chỉ tạo OKR mới | Mới |
-| Link trực tiếp OKR/KR của BU/Team; milestone không bắt buộc | Bước 5: chọn KR team; Milestone là mục tùy chọn, mốc thành entity gắn được vào báo cáo | Mới |
+| Milestone không bắt buộc | Bước 3, dưới OKR: mốc = **ngày cụ thể cần đạt một kết quả của mục tiêu** (vd. "Soft launch VN · 15/10"), gắn với 1 mục tiêu, gắn được vào báo cáo. Khác **giai đoạn** (giai đoạn = ai phải báo cáo, bao lâu một lần; mốc = theo dõi tiến độ mục tiêu) | Mới |
 | Luồng báo cáo khác nhau theo giai đoạn (Game/App) | Bước 4: ma trận Giai đoạn × Product / UA / Creative (Bắt buộc / Tùy chọn / Không cần) + tần suất, gom theo pha. Xem mục "Giai đoạn & báo cáo" bên dưới | Mới |
-| Viết trên iGoal, link Project/OKR/KR/Milestone, đẩy recap Slack | Đã có (editor + Xuất bản đa nơi). Bước 5 chỉ cấu hình kênh Slack của dự án | Đã có + cấu hình kênh |
-| Quyền xem report theo nhóm | Bước 5: ma trận Mảng báo cáo × Nhóm (PM, UA, Creative, Dev, QA, BU Head, Vận hành). Mặc định Kinh doanh chỉ PM/UA/BU Head/Vận hành | Mới (prototype mới cấu hình, chưa áp vào quyền xem thật) |
+| Viết trên iGoal, link Project/OKR/KR/Milestone, đẩy recap Slack | Đã có (editor + Xuất bản đa nơi). Bước 5 "Slack & quyền xem" chỉ cấu hình kênh Slack của dự án | Đã có + cấu hình kênh |
+| Quyền xem report theo nhóm | Bước 5: ma trận Mảng báo cáo × Nhóm (PM, UA, Creative, Dev, QA, BU Head, Vận hành). Mặc định Kinh doanh chỉ PM/UA/BU Head/Vận hành. Vai trò tự tạo tính vào cột "Vai trò khác" | Mới (prototype mới cấu hình, chưa áp vào quyền xem thật) |
 | BU Head xem tổng hợp project/milestone/tiến độ/thiếu report | Ngoài luồng tạo dự án → màn riêng | Chưa làm |
 
 ## Loại dự án & giai đoạn (cập nhật 29/09 theo thread BU Game/App)
@@ -38,7 +38,8 @@ Cập nhật: 29/09/2026 · Prototype: `prototype-app/src/ProjectForm.tsx`, `pro
 ## Rule
 - PM bắt buộc. PM/UA/Creative = người viết báo cáo mảng Sản phẩm/Kinh doanh/Creative; mọi role = thành viên dự án; PM = quản trị.
 - Đổi phân loại khi tạo mới → thay giai đoạn mẫu (Game/App khác sản phẩm nội bộ).
-- Sửa dự án: tab "Quản lý dự án" → Chỉnh sửa (5 tab, cùng form). Thứ tự: Thông tin chung → Thành viên → OKR dự án → Giai đoạn & báo cáo → Liên kết & quyền xem.
+- Sửa dự án: tab "Quản lý dự án" → Chỉnh sửa (5 tab, cùng form). Thứ tự: Thông tin chung → Thành viên → OKR dự án → Giai đoạn & báo cáo → Slack & quyền xem.
+- Bảng giai đoạn: header 2 tầng, nhóm "Ai phải báo cáo" gộp 3 cột Product / UA / Creative để nổi bật.
 
 ## Chưa làm / câu hỏi mở
 - Áp ma trận quyền xem vào `canView` (hiện quyền theo thành viên dự án).

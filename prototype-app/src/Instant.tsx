@@ -40,7 +40,7 @@ export function SimpleReport({initial,close,source,notify,publish}:{initial:Repo
   <input className="title-input" aria-label="Tên báo cáo" value={r.title} onChange={e=>patch({title:e.target.value})}/>
   <MetaRow label="Quản lý trực tiếp"><UserChip/></MetaRow>
   <MetaRow label="Loại báo cáo"><TrackSelect value={r.track} onChange={t=>patch({track:t})}/></MetaRow>
-  <MetaRow label="Liên kết"><EntityRelationPicker value={r.relations} onChange={v=>patch({relations:v})} locked={isProject?[projectId!]:[]} suggestions={relSuggest}/></MetaRow>
+  <MetaRow label="Liên kết"><EntityRelationPicker value={r.relations} onChange={v=>patch({relations:v})} locked={isProject?[projectId!]:[]} suggestions={relSuggest} onlyProject={isProject?projectId:undefined}/></MetaRow>
   <div className="divider"/>
   {r.sections.map((s,i)=><div className="ws" key={i}><h3>{s.label}</h3><AutoTextarea className="block-text" aria-label={s.label} rows={Math.max(3,s.text.split('\n').length+1)} value={s.text} placeholder={PLACEHOLDER[s.label]??'Nhập nội dung…'} onChange={e=>patch({sections:r.sections.map((x,j)=>i===j?{...x,text:e.target.value,sources:e.target.value.trim()?x.sources:[]}:x)})}/>{s.sources.length>0&&<SourceButton ids={s.sources} open={source}/>}</div>)}
   {leaving&&<LeaveDialog stay={()=>setLeaving(false)} discard={close} save={()=>save('DRAFT')}/>}
